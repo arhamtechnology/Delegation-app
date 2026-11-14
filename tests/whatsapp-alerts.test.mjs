@@ -111,7 +111,7 @@ test('wa alerts 7: a task missing details gets a fixed question naming only what
   assert.equal(missingTaskQuestion([]), null);
   assert.equal(
     missingTaskQuestion(missingFields('task_change', { action: 'create', assignee: 'Varun' })),
-    'To create this task, please send:\n• Task title\n• Task description\n• ETA (date and time, e.g. 30 Oct 5:30 PM)\n• Proof: mandatory or optional (must a screenshot be added before it can be completed?)',
+    'To create this task, please send:\n• Task title\n• ETA (date and time, e.g. 30 Oct 5:30 PM)\n• Proof: mandatory or optional (must a screenshot be added before it can be completed?)',
   );
   assert.equal(
     missingTaskQuestion(missingFields('task_change', { action: 'create', assignee: 'Varun', title: 'GST', description: 'File returns', due_date: '2026-10-30', proof_required: true })),
