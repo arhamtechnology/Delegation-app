@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../../components/Icons';
-import { clearAuthCache, getAccessToken, syncAuthSession } from '../../lib/auth';
+import { clearAuthCache, syncAuthSession } from '../../lib/auth';
 import { supabaseBrowser, supabaseRecoveryBrowser } from '../../lib/supabase-browser';
 import { AuthLayout, AuthMessage } from '../../components/AuthLayout';
 import { Loader, Spinner } from '../../components/Loader';
@@ -22,6 +22,7 @@ export default function UpdatePassword() {
   const [confirmation, setConfirmation] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -37,6 +38,11 @@ export default function UpdatePassword() {
       setError(INVALID_LINK_MESSAGE);
       setChecking(false);
       return () => { active = false; };
+    }
+
+    // Store the recovery access token from the URL hash for later API call
+    if (hashAccessToken) {
+      setRecoveryAccessToken(hashAccessToken);
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -84,6 +90,10 @@ export default function UpdatePassword() {
         exchangedSession = data?.session || null;
         session = exchangedSession;
         if (session) syncAuthSession(session);
+        // For PKCE, the exchanged session's access token is the recovery token
+        if (exchangedSession?.access_token) {
+          setRecoveryAccessToken(exchangedSession.access_token);
+        }
       }
 
       if (!active) return;
@@ -121,33 +131,27 @@ export default function UpdatePassword() {
       setError('Passwords do not match.');
       return;
     }
+    if (!recoveryAccessToken) {
+      setError(INVALID_LINK_MESSAGE);
+      return;
+    }
 
     setSaving(true);
-    const { error: updateError } = await supabaseBrowser().auth.updateUser({ password });
-    if (updateError) {
-      setError(INVALID_LINK_MESSAGE);
-      setSaving(false);
-      return;
-    }
-    const accessToken = await getAccessToken();
-    if (!accessToken) {
-      setError('Your password changed, but account setup could not be completed. Please sign in and contact your administrator.');
-      setSaving(false);
-      return;
-    }
     try {
+      // Call the API with the recovery access token to complete setup (updates password and clears must_change_password)
       const response = await fetch('/api/account/complete-password-change', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ complete_setup: true }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${recoveryAccessToken}` },
+        body: JSON.stringify({ password, complete_setup: true }),
       });
       if (!response.ok) {
-        setError('Your password changed, but account setup could not be completed. Please try again or contact your administrator.');
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || 'Your password could not be updated. Please try again or contact your administrator.');
         setSaving(false);
         return;
       }
     } catch {
-      setError('Your password changed, but account setup could not be completed. Please try again.');
+      setError('Your password could not be updated. Please try again.');
       setSaving(false);
       return;
     }

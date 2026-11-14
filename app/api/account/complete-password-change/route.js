@@ -27,9 +27,15 @@ export async function POST(request) {
 
   const password = typeof payload?.password === 'string' ? payload.password : '';
   const completeSetup = payload?.complete_setup === true;
-  if (!completeSetup && password.length < 8) return errorResponse('Password must be at least 8 characters.', 400);
-  if (!completeSetup && password.length > 128) return errorResponse('Password must be 128 characters or fewer.', 400);
-  if (completeSetup && !signedInFromEmailLink(accessToken)) return errorResponse('Open the password link from your email to finish account setup.', 403);
+  if (completeSetup) {
+    if (!signedInFromEmailLink(accessToken)) return errorResponse('Open the password link from your email to finish account setup.', 403);
+    if (!password) return errorResponse('Password is required.', 400);
+    if (password.length < 8) return errorResponse('Password must be at least 8 characters.', 400);
+    if (password.length > 128) return errorResponse('Password must be 128 characters or fewer.', 400);
+  } else {
+    if (password.length < 8) return errorResponse('Password must be at least 8 characters.', 400);
+    if (password.length > 128) return errorResponse('Password must be 128 characters or fewer.', 400);
+  }
 
   let userClient;
   let adminClient;
@@ -58,6 +64,14 @@ export async function POST(request) {
   if (!employee.must_change_password) return completeSetup ? Response.json({ success: true }) : errorResponse('A password change is not required for this account.', 409);
 
   if (completeSetup) {
+    // Update the password using the admin client (bypasses password confirmation requirement)
+    if (password) {
+      const { error: passwordError } = await adminClient.auth.admin.updateUserById(user.id, { password });
+      if (passwordError) {
+        console.error('Unable to update the employee Auth password during setup.', { code: passwordError.code, message: passwordError.message });
+        return errorResponse(passwordError.message || 'The new password could not be saved.', 400);
+      }
+    }
     const { error: employeeUpdateError } = await adminClient
       .from('employees')
       .update({ must_change_password: false })
