@@ -104,7 +104,7 @@ export default function DashboardView({ initialData }) {
   return <AppShell
     title={data ? (manager ? 'Dashboard' : 'My work') : 'Dashboard'}
     description={data ? <span suppressHydrationWarning>{greeting()}, {data.name}. Here is your work for today.</span> : 'Loading your workspace…'}
-    actions={data ? <Button asChild size="sm" className="h-8 gap-1.5 px-3"><Link href="/tasks?create=1"><Icon name="plus" size={15} />{manager ? 'Create task' : 'Add my task'}</Link></Button> : null}>
+    actions={null}>
     <StatStrip items={[
       { label: 'Total', value: data ? metrics.total : null, icon: 'clipboard', href: '/tasks' },
       { label: 'Pending', value: data ? metrics.pending : null, status: 'pending', href: '/tasks?status=pending' },
