@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildAlertMessages, dueSummaryDate, planChecklistAlerts, planChecklistItemAlerts, planTaskAlerts, reminderStage } from '../lib/wa/alerts.mjs';
+import { buildAlertMessages, buildHourlyDigest, dueSummaryDate, hourlyAnchor, isHourlyReminderWindow, planChecklistAlerts, planChecklistItemAlerts, planTaskAlerts, reminderStage } from '../lib/wa/alerts.mjs';
 
 const eta = '2026-10-29T12:00:00.000Z'; // 5:30 PM India time
 const at = (minutesFromEta) => new Date(Date.parse(eta) + minutesFromEta * 60000);
@@ -144,4 +144,25 @@ test('wa alerts 10: a new recurring checklist task always asks whether proof is 
   assert.equal(missingChecklistQuestion(missingFields('checklist', complete), 'Cash report'), 'To add "Cash report", please send:\n• Proof: mandatory or optional (must a screenshot be added before it can be marked done?)');
   assert.deepEqual(missingFields('checklist', { ...complete, proof_required: true }), []);
   assert.deepEqual(missingFields('checklist', { action: 'template_update', template: 4, proof_required: false }), [], 'switching an existing checklist needs only the R number');
+});
+
+test('wa alerts hourly: report groups tasks and checklist per person, only inside 10 AM-6 PM India time', () => {
+  const items = [
+    { person: 'Varun', title: 'GST report', due: '16 Nov · 5:30 PM', overdue: true, checklist: false },
+    { person: 'Asha', title: 'Open shop', due: '16 Nov · 9:00 AM', overdue: false, checklist: true },
+    { person: 'Varun', title: 'Bank sync', due: '16 Nov · 6:00 PM', overdue: false, checklist: false },
+  ];
+  const [text, ...rest] = buildHourlyDigest(items, new Date('2026-11-16T05:30:00Z'));
+  assert.equal(rest.length, 0);
+  assert.ok(text.indexOf('*Asha* (1 pending)') < text.indexOf('*Varun* (2 pending)'));
+  assert.match(text, /\[Checklist\] Open shop/);
+  assert.match(text, /GST report .* overdue/);
+  assert.deepEqual(buildHourlyDigest([], new Date()), []);
+  assert.equal(isHourlyReminderWindow(new Date('2026-11-16T04:29:00Z')), false); // 9:59 AM
+  assert.equal(isHourlyReminderWindow(new Date('2026-11-16T04:30:00Z')), true);
+  assert.equal(isHourlyReminderWindow(new Date('2026-11-16T13:29:00Z')), true); // 6:59 PM
+  assert.equal(isHourlyReminderWindow(new Date('2026-11-16T13:30:00Z')), false);
+  assert.equal(hourlyAnchor(new Date('2026-11-16T04:45:00Z')), '2026-11-16T04:30:00.000Z'); // 10:15 IST -> 10:00 IST
+  const many = Array.from({ length: 200 }, (_, i) => ({ person: `P${i}`, title: 'x'.repeat(60), due: 'd', overdue: false, checklist: false }));
+  assert.ok(buildHourlyDigest(many, new Date()).every((message) => message.length <= 3700));
 });
