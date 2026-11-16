@@ -2,7 +2,6 @@ import { createSupabaseAdminClient, createSupabaseUserClient, getBearerToken } f
 import { getChecklistBusinessDate, isChecklistDueOnDate, localDateTimeToIso } from '../../../../lib/checklist-time';
 import { isSunday, reconcileOpenChecklistItemsForNonWorkingDays } from '../../../../lib/checklist-non-working-day';
 
-const managerRoles = new Set(['super_admin', 'assigner', 'ea']);
 const timeZone = process.env.CHECKLIST_TIMEZONE || 'Asia/Kolkata';
 
 function responseError(message, status) {
@@ -26,10 +25,12 @@ async function authorize(request) {
   }
   const { data: { user } = {}, error: userError } = await userClient.auth.getUser(token);
   if (userError || !user) return { error: responseError('Your session is invalid or has expired.', 401) };
-  const { data: employee, error } = await userClient.from('employees').select('role').eq('auth_user_id', user.id).maybeSingle();
+  const { data: employee, error } = await userClient.from('employees').select('role,active').eq('auth_user_id', user.id).maybeSingle();
   if (error) return { error: responseError('Your workspace role could not be verified.', 500) };
-  if (!employee || !managerRoles.has(employee.role)) return { error: responseError('Only checklist managers can trigger generation.', 403) };
-  return { mode: 'manager' };
+  // Any active employee may trigger it: generation takes no input and is idempotent, and the dashboard
+  // relies on it to fill in today's checklist when the daily cron missed (e.g. a database outage).
+  if (!employee || employee.active === false) return { error: responseError('Only active employees can trigger generation.', 403) };
+  return { mode: 'employee' };
 }
 
 async function generate() {

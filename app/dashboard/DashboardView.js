@@ -8,7 +8,7 @@ import { ClearFiltersButton, FilterSelect, InlineError, ListEmpty, ListGroup, Li
 import { markWorkItemCompleted, WorkColumnsHeader, WorkItemRow } from '../../components/WorkList';
 import { Button } from '@/components/ui/button';
 import { getCurrentEmployee, peekCurrentEmployee } from '../../lib/auth';
-import { canCompleteChecklist, setChecklistCompletion } from '../../lib/checklist-data';
+import { canCompleteChecklist, ensureChecklistGeneratedToday, setChecklistCompletion } from '../../lib/checklist-data';
 import { peekQuery, queryKey, setQuery } from '../../lib/query-cache';
 import { isFreshRender, loadDashboardData } from '../../lib/page-data';
 import { canCompleteTask, setTaskCompletion } from '../../lib/task-data';
@@ -60,6 +60,8 @@ export default function DashboardView({ initialData }) {
     // Server-rendered data is fresh; only fetch when the page arrived without it.
     if (initialData) setQuery(queryKey('dashboard', initialData.employeeId), initialData);
     if (!isFreshRender(initialData)) load();
+    // The daily cron can miss a day; the first visit fills in today's checklist, then reloads.
+    ensureChecklistGeneratedToday().then((response) => { if (response?.created > 0) load(); }).catch(() => {});
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -113,7 +115,7 @@ export default function DashboardView({ initialData }) {
     ]} />
     <ProofPrompt target={justCompleted} onAdd={() => setProofTarget(justCompleted)} onDismiss={() => setJustCompleted(null)} />
     <Surface>
-      <SurfaceHeader title="Today" description="Everything due today, grouped by status." actions={<>
+      <SurfaceHeader title="Today" description="Due today, plus open tasks from other days." actions={<>
         <Button asChild variant="outline" size="sm" className="h-8"><Link href="/follow-up-tasks"><Icon name="calendar" size={14} />Follow-ups</Link></Button>
         <Button asChild variant="ghost" size="sm" className="h-8 text-brand"><Link href="/tasks">All work<Icon name="arrowUpRight" size={14} /></Link></Button>
       </>} />
