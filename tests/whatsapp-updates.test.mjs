@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatDailyUpdate, parseQuickCommand, resolveUpdateDate } from '../lib/wa/updates.mjs';
+import { formatDailyUpdate, parseQuickCommand, resolveUpdateDate } from '../modules/whatsapp/updates.mjs';
 
 test('wa updates 1: "updates for today" style messages map to today', () => {
   for (const text of ['updates', 'Updates for today', 'update today.', 'send me the updates for today', 'daily report', 'Aaj ka update', 'status', 'summary today']) {

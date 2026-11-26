@@ -1,6 +1,6 @@
-import { authorizeChecklistManager, checklistApiError } from '../../../../lib/checklist-server';
-import { actorFromAuthorization, ruleResponse } from '../../../../lib/server/actor';
-import { createTemplate, deleteTemplate, updateTemplate } from '../../../../lib/server/checklist-template-rules';
+import { authorizeChecklistManager, checklistApiError } from '../../../../modules/checklists/checklist-server';
+import { actorFromAuthorization, ruleResponse } from '../../../../lib/actor';
+import { createTemplate, deleteTemplate, updateTemplate } from '../../../../modules/checklists/checklist-template-rules';
 
 export const runtime = 'nodejs';
 

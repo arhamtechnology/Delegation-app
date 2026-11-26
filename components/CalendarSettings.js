@@ -1,15 +1,16 @@
 'use client';
 
+import { canManageCalendar } from '../modules/checklists/checklist-permissions.mjs';
 import { useEffect, useState } from 'react';
 import { Icon } from './Icons';
 import { Loader, Spinner } from './Loader';
 import { EmptyState, Modal, SectionHeader } from './UI';
-import { getAccessToken, getCurrentEmployee } from '../lib/auth';
-import { classifyEmployeeLeave } from '../lib/calendar-leave.mjs';
-import { canDeactivateNonWorkingDayTasks, formatEmployeeId } from '../lib/checklist-data';
-import { defaultChecklistTimeZone, getChecklistBusinessDate, getTodayInIndia } from '../lib/checklist-time';
+import { getAccessToken, getCurrentEmployee } from '../modules/identity/auth';
+import { classifyEmployeeLeave } from '../modules/checklists/calendar-leave.mjs';
+import { formatEmployeeId } from '../modules/checklists/checklist-data';
+import { workspaceTimeZone, getWorkspaceDate, getTodayInIndia } from '../lib/business-time';
 import { supabaseBrowser } from '../lib/supabase-browser';
-import { isFreshRender } from '../lib/page-data';
+import { isFreshRender } from '../lib/render-freshness';
 
 function formatSelectedDate(value) {
   return new Intl.DateTimeFormat('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00Z`));
@@ -101,7 +102,7 @@ export default function CalendarSettings({ initialData }) {
   const [holidayError, setHolidayError] = useState('');
   const [holidayModalOpen, setHolidayModalOpen] = useState(false);
   const [holidayEditing, setHolidayEditing] = useState(null);
-  const [holidayForm, setHolidayForm] = useState({ holiday_date: getChecklistBusinessDate(new Date(), defaultChecklistTimeZone), name: '', country: 'India', is_active: true });
+  const [holidayForm, setHolidayForm] = useState({ holiday_date: getWorkspaceDate(new Date(), workspaceTimeZone), name: '', country: 'India', is_active: true });
   const [holidaySaving, setHolidaySaving] = useState(false);
   const [employeeLeaveModalOpen, setEmployeeLeaveModalOpen] = useState(false);
   const [earlierLeaveOpen, setEarlierLeaveOpen] = useState(false);
@@ -121,7 +122,7 @@ export default function CalendarSettings({ initialData }) {
     if (!user) { setLoading(false); return; }
     if (employeeError || !currentEmployee) { setError('Unable to load your workspace profile. Please try again.'); setLoading(false); return; }
     setEmployee(currentEmployee);
-    if (!canDeactivateNonWorkingDayTasks(currentEmployee.role)) { setLoading(false); return; }
+    if (!canManageCalendar(currentEmployee.role)) { setLoading(false); return; }
     const token = await getAccessToken();
     const [configResult, employeeResult] = await Promise.all([
       fetch('/api/checklist/non-working-days', { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(async (response) => ({ response, payload: await response.json().catch(() => ({})) })),
@@ -159,7 +160,7 @@ export default function CalendarSettings({ initialData }) {
   }
 
   function updateHolidayForm(field, value) { setHolidayForm((current) => ({ ...current, [field]: value })); }
-  function openHolidayCreate() { setHolidayEditing(null); setHolidayForm({ holiday_date: getChecklistBusinessDate(new Date(), defaultChecklistTimeZone), name: '', country: 'India', is_active: true }); setHolidayError(''); setHolidayModalOpen(true); }
+  function openHolidayCreate() { setHolidayEditing(null); setHolidayForm({ holiday_date: getWorkspaceDate(new Date(), workspaceTimeZone), name: '', country: 'India', is_active: true }); setHolidayError(''); setHolidayModalOpen(true); }
   function openHolidayEdit(holiday) { setHolidayEditing(holiday); setHolidayForm({ holiday_date: holiday.holiday_date, name: holiday.name, country: holiday.country, is_active: holiday.is_active }); setHolidayError(''); setHolidayModalOpen(true); }
   function closeHolidayModal() { setHolidayModalOpen(false); setHolidayEditing(null); setHolidayError(''); }
 
@@ -192,7 +193,7 @@ export default function CalendarSettings({ initialData }) {
   function editEmployeeLeaveFromHistory({ group }) { closeEarlierLeave(); openEmployeeLeaveConfig(group); }
 
   if (loading) return <section className="panel checklist-loading"><Loader label="Loading calendar..." /></section>;
-  if (!employee || !canDeactivateNonWorkingDayTasks(employee.role)) return <section className="panel"><EmptyState icon="calendar" title="Calendar settings unavailable" description="You do not have permission to manage workspace calendars." /></section>;
+  if (!employee || !canManageCalendar(employee.role)) return <section className="panel"><EmptyState icon="calendar" title="Calendar settings unavailable" description="You do not have permission to manage workspace calendars." /></section>;
   const today = getTodayInIndia();
   const classifiedLeave = classifyEmployeeLeave(employeeLeave, today);
   const withEmployeeName = (entries) => entries.map((entry) => ({ ...entry, employeeName: getEmployeeName(entry.group) }));

@@ -1,20 +1,23 @@
 'use client';
 
+import { canCompleteChecklist } from '../../modules/checklists/checklist-permissions.mjs';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import { Icon } from '../../components/Icons';
 import { ClearFiltersButton, FilterSelect, InlineError, ListEmpty, ListGroup, ListSkeleton, StatStrip, Surface, SurfaceHeader, Toolbar, ToolbarSearch } from '../../components/Workflow';
 import { markWorkItemCompleted, WorkColumnsHeader, WorkItemRow } from '../../components/WorkList';
 import { Button } from '@/components/ui/button';
-import { getCurrentEmployee, peekCurrentEmployee } from '../../lib/auth';
-import { canCompleteChecklist, ensureChecklistGeneratedToday, setChecklistCompletion } from '../../lib/checklist-data';
+import { getCurrentEmployee, peekCurrentEmployee } from '../../modules/identity/auth';
+import { ensureChecklistGeneratedToday, setChecklistCompletion } from '../../modules/checklists/checklist-actions';
 import { peekQuery, queryKey, setQuery } from '../../lib/query-cache';
-import { isFreshRender, loadDashboardData } from '../../lib/page-data';
-import { canCompleteTask, setTaskCompletion } from '../../lib/task-data';
-import { getWorkItemStatus, sortWorkItemsChronologically } from '../../lib/work-data';
+import { isFreshRender } from '../../lib/render-freshness';
+import { loadDashboardData } from '../../modules/work/dashboard';
+import { startDashboardAutoRefresh } from '../../modules/work/dashboard-refresh.mjs';
+import { canCompleteTask, setTaskCompletion } from '../../modules/tasks/task-data';
+import { getWorkItemStatus, sortWorkItemsChronologically } from '../../modules/work-model/work-items.mjs';
 import { ProofDialog, ProofPrompt } from '../../components/TaskProof';
-import { isProofRequiredError } from '../../lib/task-proofs';
+import { isProofRequiredError } from '../../modules/work/task-proofs';
 
 const DASHBOARD_PAGE = 20;
 
@@ -40,31 +43,54 @@ export default function DashboardView({ initialData }) {
   const [visibleCount, setVisibleCount] = useState({ overdue: DASHBOARD_PAGE, pending: DASHBOARD_PAGE, completed: DASHBOARD_PAGE });
   const abortRef = useRef(null);
 
-  async function load() {
+  const load = useCallback(async ({ background = false } = {}) => {
+    if (background && abortRef.current) return;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setLoading(true);
-    setError('');
-    const { employee, error: employeeError } = await getCurrentEmployee();
-    if (controller.signal.aborted) return;
-    if (employeeError || !employee) { setError('Unable to load your workspace profile. Please try again.'); setLoading(false); return; }
-    const response = await loadDashboardData({ employee, signal: controller.signal });
-    if (controller.signal.aborted) return;
-    if (response.error) setError(response.error.message || 'Unable to load dashboard data. Please try again.');
-    else { setQuery(queryKey('dashboard', employee.id), response.data); setData(response.data); }
-    setLoading(false);
-  }
+    if (!background) {
+      setLoading(true);
+      setError('');
+    }
+    try {
+      const { employee, error: employeeError } = await getCurrentEmployee();
+      if (controller.signal.aborted) return;
+      if (employeeError || !employee) throw new Error('Unable to load your workspace profile. Please try again.');
+      const response = await loadDashboardData({ employee, signal: controller.signal });
+      if (controller.signal.aborted) return;
+      if (response.error) throw response.error;
+      setQuery(queryKey('dashboard', employee.id), response.data);
+      setData(response.data);
+    } catch (error) {
+      if (!background && !controller.signal.aborted) setError(error?.message || 'Unable to load dashboard data. Please try again.');
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        if (!background && !controller.signal.aborted) setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    let active = true;
     // Server-rendered data is fresh; only fetch when the page arrived without it.
     if (initialData) setQuery(queryKey('dashboard', initialData.employeeId), initialData);
     if (!isFreshRender(initialData)) load();
     // The daily cron can miss a day; the first visit fills in today's checklist, then reloads.
-    ensureChecklistGeneratedToday().then((response) => { if (response?.created > 0) load(); }).catch(() => {});
-    return () => abortRef.current?.abort();
+    ensureChecklistGeneratedToday().then((response) => { if (active && response?.created > 0) load(); }).catch(() => {});
+    return () => {
+      active = false;
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const isEa = data?.role === 'ea';
+  useEffect(() => {
+    if (!isEa || completing) return;
+    return startDashboardAutoRefresh(() => load({ background: true }));
+  }, [isEa, completing, load]);
 
   const manager = Boolean(data && ['super_admin', 'assigner', 'ea'].includes(data.role));
 
@@ -88,6 +114,8 @@ export default function DashboardView({ initialData }) {
 
   async function completeChecklist(workItem) {
     if (completing) return;
+    abortRef.current?.abort();
+    setLoading(false);
     setCompleting(workItem.id);
     setError('');
     const swap = (replacement) => (item) => (item.kind === workItem.kind && item.id === workItem.id ? replacement(item) : item);
@@ -101,7 +129,7 @@ export default function DashboardView({ initialData }) {
     if (!updateError) load();
   }
 
-  const renderRow = (task) => <WorkItemRow key={`${task.kind}-${task.id}`} workItem={task} showAssignee={manager} canComplete={task.kind === 'checklist' ? canCompleteChecklist(data.role, data.employeeId, task.assignee_id) : canCompleteTask(data.employeeId, task.assignee_id)} completing={completing} onComplete={completeChecklist} />;
+  const renderRow = (task) => <WorkItemRow key={`${task.kind}-${task.id}`} workItem={task} showAssignee={manager} canComplete={task.kind === 'fms' ? false : task.kind === 'checklist' ? canCompleteChecklist(data.role, data.employeeId, task.assignee_id) : canCompleteTask(data.employeeId, task.assignee_id)} completing={completing} onComplete={completeChecklist} />;
 
   return <AppShell
     title={data ? (manager ? 'Dashboard' : 'My work') : 'Dashboard'}
@@ -121,11 +149,11 @@ export default function DashboardView({ initialData }) {
       </>} />
       <Toolbar search={manager ? <ToolbarSearch value={search} onChange={setSearch} placeholder="Search today's work or people" /> : null}>
         {manager && <FilterSelect label="Person" value={employeeFilter} onChange={setEmployeeFilter}><option value="all">Anyone</option>{(data?.employees || []).map((employee) => <option value={employee.id} key={employee.id}>{employee.name}</option>)}</FilterSelect>}
-        <FilterSelect label="Type" value={typeFilter} onChange={setTypeFilter}><option value="all">All work</option><option value="task">Tasks</option><option value="checklist">Checklist</option></FilterSelect>
+        <FilterSelect label="Type" value={typeFilter} onChange={setTypeFilter}><option value="all">All work</option><option value="task">Tasks</option><option value="checklist">Checklist</option>{!manager && <option value="fms">FMS</option>}</FilterSelect>
         <FilterSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter}><option value="all">Any</option><option value="critical">Critical</option><option value="high">High</option><option value="normal">Normal</option></FilterSelect>
         <ClearFiltersButton visible={filtersActive} onClick={clearFilters} />
       </Toolbar>
-      <InlineError message={error} onRetry={load} />
+      <InlineError message={error} onRetry={() => load()} />
       {!data && loading ? <ListSkeleton /> : <>
         <WorkColumnsHeader showPerson={manager} />
         {[['overdue', 'Overdue', true], ['pending', 'Pending', false], ['completed', 'Completed', false]].map(([status, title, open]) => groups[status].length > 0 && <ListGroup key={status} status={status} title={title} count={groups[status].length} defaultOpen={open}>{groups[status].slice(0, visibleCount[status]).map(renderRow)}{groups[status].length > visibleCount[status] && <li className="flex items-center justify-between gap-3 border-t border-border/70 bg-muted/20 px-4 py-2 text-[14px] text-muted-foreground"><span className="tabular-nums">Showing {visibleCount[status]} of {groups[status].length}</span><Button variant="outline" size="sm" className="h-8" onClick={() => setVisibleCount((current) => ({ ...current, [status]: current[status] + DASHBOARD_PAGE }))}>Show {Math.min(DASHBOARD_PAGE, groups[status].length - visibleCount[status])} more</Button></li>}</ListGroup>)}

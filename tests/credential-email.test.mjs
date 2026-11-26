@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildCredentialEmail, sendCredentialEmails } from '../lib/server/credential-email.mjs';
+import { buildCredentialEmail, sendCredentialEmails } from '../modules/identity/credential-email.mjs';
 
 const base = { name: 'Asha <Ops>', email: 'asha@example.com', appUrl: 'https://task.arham.app', setupUrl: 'https://x.supabase.co/auth/v1/verify?token=abc&type=recovery' };
 

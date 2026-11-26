@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import CalendarSettings from '../../components/CalendarSettings';
-import { withRenderTime } from '../../lib/page-data';
-import { getConfiguredDays } from '../../lib/server/non-working-day-rules';
-import { getServerSession } from '../../lib/server-session';
+import { withRenderTime } from '../../lib/render-freshness';
+import { getConfiguredDays } from '../../modules/checklists/non-working-day-rules';
+import { getServerSession } from '../../modules/identity/server-session';
 import { createSupabaseAdminClient } from '../../lib/supabase-server';
 
 export const metadata = { title: 'Calendar' };

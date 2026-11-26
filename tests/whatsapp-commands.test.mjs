@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseCommand } from '../lib/wa/commands.mjs';
+import { parseCommand } from '../modules/whatsapp/commands.mjs';
 
 function expectAll(texts, expected) {
   for (const text of texts) assert.deepEqual(parseCommand(text), expected, text);

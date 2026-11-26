@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { dedupeWorkItems, getWorkItemStatus, sortWorkItemsChronologically, toChecklistWorkItem, toTaskWorkItem } from '../lib/work-items.mjs';
+import { dedupeWorkItems, getWorkItemStatus, sortWorkItemsChronologically, toChecklistWorkItem, toTaskWorkItem } from '../modules/work-model/work-items.mjs';
 
 test('work items 1: checklist rows map to the unified shape', () => {
   const item = toChecklistWorkItem({ id: 'a', task: 'Petty cash', employee_id: 'e1', due_date: '2026-10-27', status: 'pending' });
@@ -38,7 +38,7 @@ test('work items 3c: latest overdue item due today appears first', () => {
 });
 
 test('work items carry who assigned them (task, or the checklist template)', async () => {
-  const { toTaskWorkItem, toChecklistWorkItem } = await import('../lib/work-items.mjs');
+  const { toTaskWorkItem, toChecklistWorkItem } = await import('../modules/work-model/work-items.mjs');
   assert.equal(toTaskWorkItem({ id: 't1', title: 'GST', assignee_id: 'e1', assigned_by_name: 'Priyanka' }).assignedByName, 'Priyanka');
   assert.equal(toTaskWorkItem({ id: 't2', title: 'GST', assignee_id: 'e1' }).assignedByName, null);
   assert.equal(toChecklistWorkItem({ id: 'c1', task: 'Cash', employee_id: 'e1', assigned_by_name: 'Ankit Jain' }).assignedByName, 'Ankit Jain');

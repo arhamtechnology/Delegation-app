@@ -1,5 +1,7 @@
 'use client';
 
+import { canManageWork } from '../../modules/identity/roles.mjs';
+import { canCompleteChecklist } from '../../modules/checklists/checklist-permissions.mjs';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '../../components/AppShell';
@@ -10,17 +12,18 @@ import { markWorkItemCompleted, workStatusGroups, WorkColumnsHeader, WorkItemRow
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { canCreateTasks, getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../lib/auth';
+import { getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../modules/identity/auth';
 import { peekQuery, queryKey, setQuery } from '../../lib/query-cache';
-import { canCompleteChecklist, setChecklistCompletion } from '../../lib/checklist-data';
-import { canCompleteTask, createTask, setTaskCompletion } from '../../lib/task-data';
-import { getWorkItemStatus } from '../../lib/work-data';
-import { getPageCount } from '../../lib/work-list.mjs';
-import { isFreshRender, isValidDateFilter, loadTasksPage, loadTasksWorkspace, parseTaskFilters, SECTION_PAGE_SIZE, taskSectionStatuses } from '../../lib/page-data';
+import { setChecklistCompletion } from '../../modules/checklists/checklist-actions';
+import { canCompleteTask, createTask, setTaskCompletion } from '../../modules/tasks/task-data';
+import { getWorkItemStatus } from '../../modules/work-model/work-items.mjs';
+import { getPageCount } from '../../modules/work-model/work-list.mjs';
+import { isFreshRender } from '../../lib/render-freshness';
+import { isValidDateFilter, loadTasksPage, loadTasksWorkspace, parseTaskFilters, SECTION_PAGE_SIZE, taskSectionStatuses } from '../../modules/work/task-workspace';
 import AssignedChecklists from '../../components/AssignedChecklists';
 import { Spinner } from '../../components/Loader';
 import { ProofDialog, ProofPrompt } from '../../components/TaskProof';
-import { isProofRequiredError } from '../../lib/task-proofs';
+import { isProofRequiredError } from '../../modules/work/task-proofs';
 
 const emptyForm = { title: '', description: '', assignee_id: '', eta: '', due_time: '', start_date: '', priority: 'normal', category: 'General', instructions: '', proof_required: null, completion_notes: null, attachments: [] };
 const viewTabs = [['all', 'All work'], ['task', 'Tasks'], ['checklist', 'Checklist']];
@@ -179,7 +182,7 @@ export default function TasksView({ initialData }) {
   }, [createRequested, taskData]);
 
   const employees = useMemo(() => taskData?.employees || [], [taskData]);
-  const canCreate = Boolean(taskData && canCreateTasks(taskData.role));
+  const canCreate = Boolean(taskData && canManageWork(taskData.role));
   const personal = Boolean(taskData) && !canCreate;
   const sectionList = visibleStatuses.map((sectionStatus) => ({ ...workStatusGroups.find((group) => group.status === sectionStatus), ...sections[sectionStatus] }));
   const anyLoading = sectionList.some((section) => section.loading);
@@ -198,7 +201,7 @@ export default function TasksView({ initialData }) {
     if (!form.due_time) { setError('Please select a due time.'); setSaving(false); return; }
     const { user, employee } = await getCurrentEmployee();
     if (!user) { setError('Your session has expired. Please sign in again.'); setSaving(false); return; }
-    const own = !canCreateTasks(employee?.role);
+    const own = !canManageWork(employee?.role);
     if (!own && typeof form.proof_required !== 'boolean') { setError('Choose whether completion proof is mandatory or optional.'); setSaving(false); return; }
     const { error: createError } = await createTask(own ? { ...form, assignee_id: employee.id, proof_required: false } : form, user.id);
     if (createError) setError(createError.message);

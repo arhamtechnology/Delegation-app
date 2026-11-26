@@ -1,5 +1,5 @@
-import { authorizeNonWorkingDayManager, checklistApiError } from '../../../../lib/checklist-server';
-import { deactivateNonWorkingDayItems, formatNonWorkingDayError, getNonWorkingDayPreview } from '../../../../lib/checklist-non-working-day';
+import { authorizeNonWorkingDayManager, checklistApiError } from '../../../../modules/checklists/checklist-server';
+import { deactivateNonWorkingDayItems, formatNonWorkingDayError, getNonWorkingDayPreview } from '../../../../modules/checklists/checklist-non-working-day';
 
 export const runtime = 'nodejs';
 

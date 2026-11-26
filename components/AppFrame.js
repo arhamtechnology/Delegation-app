@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseBrowser } from '../lib/supabase-browser';
-import { clearAuthCache, getCurrentEmployee, peekCurrentEmployee, primeCurrentEmployee, syncAuthSession } from '../lib/auth';
-import { getUnreadNotificationCount } from '../lib/notifications';
+import { clearAuthCache, getCurrentEmployee, peekCurrentEmployee, primeCurrentEmployee, syncAuthSession } from '../modules/identity/auth';
+import { getUnreadNotificationCount } from '../modules/notifications/notifications';
 import { Icon } from './Icons';
 import { Loader, Spinner } from './Loader';
 import { BrandBadge, BrandLogo } from './BrandLogo';
@@ -21,6 +21,7 @@ const managerNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: 'grid', section: 'Workspace' },
   { href: '/tasks', label: 'Tasks', icon: 'clipboard', section: 'Workspace' },
   { href: '/checklist', label: 'Checklist', icon: 'checkSquare', section: 'Workspace' },
+  { href: '/fms', label: 'FMS', icon: 'activity', section: 'Manage' },
   { href: '/calendar', label: 'Calendar', icon: 'calendar', section: 'Manage', roles: ['super_admin', 'ea'] },
   { href: '/employees', label: 'Employees', icon: 'users', section: 'Manage' },
   { href: '/mis', label: 'MIS', icon: 'chart', section: 'Manage' },

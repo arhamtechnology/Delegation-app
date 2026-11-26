@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatDailyReport, reportChunkChars } from '../lib/wa/daily-report.mjs';
+import { formatDailyReport, reportChunkChars } from '../modules/whatsapp/daily-report.mjs';
 
 const now = new Date('2026-10-31T12:30:00.000Z'); // 6 PM India time
 const employees = [{ id: 'e1', name: 'Varun' }, { id: 'e2', name: 'Asha' }, { id: 'e3', name: 'Zoya' }];

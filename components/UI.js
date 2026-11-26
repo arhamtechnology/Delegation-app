@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatTaskDeadline, getTaskStatus } from '../lib/task-data';
+import { formatTaskDeadline, getTaskStatus } from '../modules/tasks/task-data';
 
 export const statusMeta = {
   pending: { label: 'Pending', tone: 'purple', icon: 'clock' },

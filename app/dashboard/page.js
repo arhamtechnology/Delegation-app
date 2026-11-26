@@ -1,6 +1,7 @@
 import DashboardView from './DashboardView';
-import { loadDashboardData, withRenderTime } from '../../lib/page-data';
-import { getServerSession } from '../../lib/server-session';
+import { loadDashboardData } from '../../modules/work/dashboard';
+import { withRenderTime } from '../../lib/render-freshness';
+import { getServerSession } from '../../modules/identity/server-session';
 
 export const metadata = { title: 'Dashboard' };
 

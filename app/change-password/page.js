@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../../components/Icons';
-import { clearAuthCache, getAccessToken, getCurrentEmployee } from '../../lib/auth';
+import { clearAuthCache, getAccessToken, getCurrentEmployee } from '../../modules/identity/auth';
 import { AuthLayout, AuthMessage } from '../../components/AuthLayout';
 import { Loader, Spinner } from '../../components/Loader';
 import { Button } from '@/components/ui/button';

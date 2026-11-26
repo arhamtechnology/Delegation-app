@@ -8,10 +8,10 @@ import { FilterSelect, InlineError, ListEmpty, ListSkeleton, StatStrip, Surface,
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { getAccessToken, getCurrentEmployee, invalidateCurrentEmployee } from '../../lib/auth';
+import { getAccessToken, getCurrentEmployee, invalidateCurrentEmployee } from '../../modules/identity/auth';
 import { supabaseBrowser } from '../../lib/supabase-browser';
-import { isFreshRender } from '../../lib/page-data';
-import { clearTaskEmployeeCaches } from '../../lib/task-data';
+import { isFreshRender } from '../../lib/render-freshness';
+import { clearEmployeeDirectoryCache } from '../../modules/identity/employee-directory';
 import { Spinner } from '../../components/Loader';
 
 const emptyEmployee = { name: '', email: '', mobile: '', role: 'doer', active: true };
@@ -178,7 +178,7 @@ export default function EmployeesView({ initialData }) {
       }
     }
     if (saveError) setError(saveError.message);
-    else { setMessage(emailUpdated ? 'Email updated successfully.' : editing ? 'Employee details updated.' : 'Employee added. A password setup email was sent.'); invalidateCurrentEmployee(); clearTaskEmployeeCaches(); await load(); closeModal(); }
+    else { setMessage(emailUpdated ? 'Email updated successfully.' : editing ? 'Employee details updated.' : 'Employee added. A password setup email was sent.'); invalidateCurrentEmployee(); clearEmployeeDirectoryCache(); await load(); closeModal(); }
     setSaving(false);
   }
 
@@ -187,7 +187,7 @@ export default function EmployeesView({ initialData }) {
     setRows((current) => current.map((row) => row.id === employee.id ? { ...row, active: !employee.active } : row));
     const { error: updateError } = await supabaseBrowser().from('employees').update({ active: !employee.active }).eq('id', employee.id);
     if (updateError) { setRows((current) => current.map((row) => row.id === employee.id ? { ...row, active: employee.active } : row)); setError(updateError.message); }
-    else { setMessage(`${employee.name} is now ${employee.active ? 'inactive' : 'active'}.`); invalidateCurrentEmployee(); clearTaskEmployeeCaches(); }
+    else { setMessage(`${employee.name} is now ${employee.active ? 'inactive' : 'active'}.`); invalidateCurrentEmployee(); clearEmployeeDirectoryCache(); }
   }
 
   async function deleteEmployee(employee) {
@@ -220,7 +220,7 @@ export default function EmployeesView({ initialData }) {
       }
       setMessage(`${employee.name} was deleted.`);
       invalidateCurrentEmployee();
-      clearTaskEmployeeCaches();
+      clearEmployeeDirectoryCache();
       await load();
     } catch {
       setError('The employee deletion service is unavailable. Please try again.');

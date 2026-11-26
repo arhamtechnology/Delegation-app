@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { filterWorkItems, getUnifiedWorkItemStatus, getWorkSummary } from '../lib/work-summary.mjs';
-import { validateWorkReportPayload } from '../lib/work-list.mjs';
+import { filterWorkItems, getUnifiedWorkItemStatus, getWorkSummary } from '../modules/work-model/work-summary.mjs';
+import { validateWorkReportPayload } from '../modules/work-model/work-list.mjs';
 
 const now = new Date('2026-09-16T06:30:00.000Z');
 const pendingTask = { id: 'task-pending', kind: 'task', assignee_id: 'employee-a', status: 'pending', eta: '2026-09-16T07:30:00.000Z' };

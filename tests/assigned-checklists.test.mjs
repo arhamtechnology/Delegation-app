@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatChecklistDate, getNextChecklistDueDate } from '../lib/checklist-time.js';
-import { toAssignedChecklists } from '../lib/server/assigned-checklists.mjs';
+import { formatChecklistDate, getNextChecklistDueDate } from '../modules/checklists/checklist-time.js';
+import { toAssignedChecklists } from '../modules/checklists/assigned-checklists.mjs';
 
 const weekly = (weekday, overrides = {}) => ({ id: `weekly-${weekday}`, task: 'Weekly', frequency: 'weekly', weekday, start_date: '2026-11-06', due_time: '11:00:00', ...overrides });
 const monthly = (days, overrides = {}) => ({ id: 'monthly', task: 'Monthly', frequency: 'monthly', day_of_month: days[0], monthly_days: days, start_date: '2026-11-06', due_time: '11:00:00', ...overrides });

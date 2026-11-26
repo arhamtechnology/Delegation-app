@@ -1,7 +1,7 @@
-import { authorizeNonWorkingDayManager, checklistApiError } from '../../../../lib/checklist-server';
-import { formatNonWorkingDayError } from '../../../../lib/checklist-non-working-day';
-import { actorFromAuthorization, ruleResponse } from '../../../../lib/server/actor';
-import { configureNonWorkingDays, getConfiguredDays, removeNonWorkingDay } from '../../../../lib/server/non-working-day-rules';
+import { authorizeNonWorkingDayManager, checklistApiError } from '../../../../modules/checklists/checklist-server';
+import { formatNonWorkingDayError } from '../../../../modules/checklists/checklist-non-working-day';
+import { actorFromAuthorization, ruleResponse } from '../../../../lib/actor';
+import { configureNonWorkingDays, getConfiguredDays, removeNonWorkingDay } from '../../../../modules/checklists/non-working-day-rules';
 
 export const runtime = 'nodejs';
 

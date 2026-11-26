@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatTodayWork } from '../lib/wa/format.mjs';
-import { formatPersonFullReport } from '../lib/wa/person-report.mjs';
-import { reportChunkChars } from '../lib/wa/daily-report.mjs';
+import { formatTodayWork } from '../modules/whatsapp/format.mjs';
+import { formatPersonFullReport } from '../modules/whatsapp/person-report.mjs';
+import { reportChunkChars } from '../modules/whatsapp/daily-report.mjs';
 
 const items = [{ who: 'Varun', title: 'GST report', status: 'overdue', due: 'Nov 2 · 10:00 AM', checklist: false }];
 

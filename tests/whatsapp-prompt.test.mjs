@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildDynamicContext, buildSystem, missingFields, staticSystemPrompt, toolDefinitions, toolSchemas } from '../lib/wa/tools.mjs';
+import { buildDynamicContext, buildSystem, missingFields, staticSystemPrompt, toolDefinitions, toolSchemas } from '../modules/whatsapp/tools.mjs';
 
 const now = new Date('2026-10-27T06:00:00.000Z');
 const actor = { name: 'Director', role: 'ea' };

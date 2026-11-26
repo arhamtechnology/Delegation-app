@@ -1,0 +1,183 @@
+import { formatChecklistDueAt } from '../checklists/checklist-time.js';
+import { getWorkspaceDate, getDateTimeParts } from '../../lib/business-time.js';
+import { describeRecurrence } from './format.mjs';
+
+// Timed WhatsApp alerts about work. Pure planning and wording only; lib/wa/alerts-run.js does the I/O.
+export const directorRoles = new Set(['super_admin', 'assigner']);
+// Older work is left alone so a first run (or a long outage) never floods the EA with stale alerts.
+export const assignedLookbackMs = 30 * 60 * 1000;
+export const reminderLookbackMs = 60 * 60 * 1000;
+export const reminderLookaheadMs = 5 * 60 * 1000;
+export const summaryTime = '18:00';
+
+// Hourly pending report: on the hour from 10 AM to 6 PM India time.
+export const hourlyReminderStartHour = 10;
+export const hourlyReminderEndHour = 19;
+
+const descriptionChars = 300;
+const blocksPerSection = 10;
+
+/** The reminder a work item is due for at `now`: 5 min before its ETA, 5 min after, then 15 min after. */
+export function reminderStage(eta, now) {
+  const minutes = (now.getTime() - Date.parse(eta)) / 60000;
+  if (Number.isNaN(minutes)) return null;
+  if (minutes > -5 && minutes <= 0) return 'due_soon';
+  if (minutes >= 5 && minutes < 15) return 'overdue';
+  if (minutes >= 15 && minutes < 60) return 'escalated';
+  return null;
+}
+
+/**
+ * Alerts owed at `now`, before de-duplication. `director` is who assigned the task (null when an EA
+ * or the employee did); `anchor` keys the alert so a revised ETA earns fresh reminders.
+ * @param {{ id: string, title: string, description?: string | null, eta: string, created_at: string, assigneeName: string, director: { name: string, chatId: string | null } | null }[]} tasks
+ */
+export function planTaskAlerts(tasks, now) {
+  const alerts = [];
+  for (const task of tasks) {
+    const base = { taskId: task.id, title: task.title, description: task.description, eta: task.eta, assigneeName: task.assigneeName, director: task.director };
+    if (task.director && now.getTime() - Date.parse(task.created_at) <= assignedLookbackMs) alerts.push({ ...base, stage: 'assigned', anchor: task.created_at });
+    const stage = reminderStage(task.eta, now);
+    if (stage) alerts.push({ ...base, stage, anchor: task.eta });
+  }
+  return alerts;
+}
+
+/**
+ * ETA reminders for generated checklist items. The template's director is attached by the runner.
+ * @param {{ id: string, task: string, due_at: string, employeeName: string, director: { name: string, chatId: string | null } | null }[]} items
+ */
+export function planChecklistItemAlerts(items, now) {
+  return items.flatMap((item) => {
+    const stage = reminderStage(item.due_at, now);
+    return stage ? [{ itemId: item.id, title: item.task, eta: item.due_at, assigneeName: item.employeeName, director: item.director, stage, anchor: item.due_at }] : [];
+  });
+}
+
+/**
+ * Notices for recurring checklist tasks a director added recently; they have no ETA, so no reminders.
+ * @param {{ id: string, task: string, created_at: string, assigneeName: string, director: { name: string, chatId: string | null } | null }[]} templates
+ */
+export function planChecklistAlerts(templates, now) {
+  return templates
+    .filter((template) => template.director && now.getTime() - Date.parse(template.created_at) <= assignedLookbackMs)
+    .map((template) => ({ templateId: template.id, stage: 'checklist_assigned', title: template.task, schedule: describeRecurrence(template), assigneeName: template.assigneeName, director: template.director }));
+}
+
+const headers = {
+  due_soon: '⏰ Due in 5 minutes, overdue after the ETA',
+  overdue: '⚠️ Overdue: 5 minutes past the ETA',
+  escalated: '🚨 Still not done 15 minutes after the ETA',
+};
+const stageOrder = ['assigned', 'checklist_assigned', 'due_soon', 'overdue', 'escalated'];
+
+function clip(text) {
+  const chars = Array.from(String(text || '').trim());
+  return chars.length > descriptionChars ? `${chars.slice(0, descriptionChars - 1).join('')}…` : chars.join('');
+}
+
+// Person, task, description and due time on their own lines, so the EA can act on it without opening the app.
+function detailBlock(alert, { withDirector = false } = {}) {
+  const lines = [`Person: ${alert.assigneeName}`, `Task: ${alert.title}`];
+  const description = clip(alert.description);
+  if (description) lines.push(`Description: ${description}`);
+  lines.push(alert.schedule ? `Repeats: ${alert.schedule}` : `Due: ${formatChecklistDueAt(alert.eta)}`);
+  if (withDirector && alert.director) lines.push(`Assigned by: ${alert.director.name}`);
+  return lines.join('\n');
+}
+
+function section(header, alerts, options) {
+  const blocks = alerts.slice(0, blocksPerSection).map((alert) => detailBlock(alert, options));
+  if (alerts.length > blocksPerSection) blocks.push(`+${alerts.length - blocksPerSection} more in the app`);
+  return `${header}\n\n${blocks.join('\n\n')}`;
+}
+
+function assignedSections(alerts, noun) {
+  const byDirector = new Map();
+  for (const alert of alerts) byDirector.set(alert.director.name, [...(byDirector.get(alert.director.name) || []), alert]);
+  return [...byDirector.entries()].map(([name, items]) => {
+    const what = items.length === 1 ? `a ${noun}` : `${items.length} ${noun}s`;
+    return section(noun === 'task' ? `📌 ${name} assigned ${what}` : `📋 ${name} added ${what}`, items);
+  });
+}
+
+/**
+ * One WhatsApp message per recipient. EAs hear about the pre-ETA and 5-minute overdue alerts;
+ * the assigning director receives the 15-minute escalation.
+ * @returns {{ chatId: string, text: string }[]}
+ */
+export function buildAlertMessages(alerts, eaChatIds) {
+  const inbox = new Map();
+  const add = (chatId, stage, alert) => {
+    if (!chatId) return;
+    const stages = inbox.get(chatId) || new Map();
+    stages.set(stage, [...(stages.get(stage) || []), alert]);
+    inbox.set(chatId, stages);
+  };
+  for (const alert of alerts) {
+    if (alert.stage === 'escalated') {
+      add(alert.director?.chatId, alert.stage, alert);
+    } else {
+      for (const chatId of eaChatIds) add(chatId, alert.stage, alert);
+    }
+  }
+  return [...inbox.entries()].map(([chatId, stages]) => ({
+    chatId,
+    text: stageOrder.filter((stage) => stages.has(stage)).flatMap((stage) => {
+      if (stage === 'assigned') return assignedSections(stages.get(stage), 'task');
+      if (stage === 'checklist_assigned') return assignedSections(stages.get(stage), 'checklist task');
+      return [section(headers[stage], stages.get(stage), { withDirector: stage === 'escalated' })];
+    }).join('\n\n'),
+  }));
+}
+
+/** The India-time date whose 6 PM summary is due at `now`, or null before 6 PM. */
+export function dueSummaryDate(now) {
+  const { hour, minute } = getDateTimeParts(now);
+  return `${hour}:${minute}` >= summaryTime ? getWorkspaceDate(now) : null;
+}
+
+/** True from 10:00 to 18:59 India time. */
+export function isHourlyReminderWindow(now) {
+  const hour = Number(getDateTimeParts(now).hour);
+  return hour >= hourlyReminderStartHour && hour < hourlyReminderEndHour;
+}
+
+const istOffsetMs = 330 * 60000;
+const whatsappChunkChars = 3500;
+
+/** Start of the current India-time hour, as ISO: the dedupe key for one hourly report. */
+export function hourlyAnchor(now) {
+  return new Date(Math.floor((now.getTime() + istOffsetMs) / 3600000) * 3600000 - istOffsetMs).toISOString();
+}
+
+/**
+ * Hourly report of today's open work, person by person (tasks and checklist items).
+ * @param {{ person: string, title: string, due: string, overdue: boolean, checklist: boolean }[]} items
+ * @returns {string[]} WhatsApp messages, split below the message size limit; [] when nothing is pending.
+ */
+export function buildHourlyDigest(items, now) {
+  if (!items.length) return [];
+  const byPerson = new Map();
+  for (const item of items) byPerson.set(item.person, [...(byPerson.get(item.person) || []), item]);
+  const line = (item) => `• ${item.checklist ? '[Checklist] ' : ''}${item.title} · ${item.due}${item.overdue ? ' ⚠️ overdue' : ''}`;
+  const blocks = [...byPerson.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([person, list]) => {
+    const lines = list.map(line);
+    // A person with a very long list is cut so one block never exceeds a message.
+    while (lines.join('\n').length > whatsappChunkChars - 200) lines.pop();
+    const hidden = list.length - lines.length;
+    return `*${person}* (${list.length} pending)\n${lines.join('\n')}${hidden ? `\n+${hidden} more in the app` : ''}`;
+  });
+  const head = `📋 Hourly pending work · ${formatChecklistDueAt(now.toISOString()).split(' · ').pop()}`;
+  const messages = [];
+  let current = head;
+  for (const block of blocks) {
+    if (current.length + block.length + 2 > whatsappChunkChars && current !== head) {
+      messages.push(current);
+      current = `${head} (cont.)`;
+    }
+    current += `\n\n${block}`;
+  }
+  messages.push(current);
+  return messages;
+}

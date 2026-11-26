@@ -2,6 +2,8 @@
 
 This repository is a clean Supabase + Next.js + Vercel deployment package reconstructed from the approved Delegation App requirements.
 
+See the [module map](docs/03-architecture/module-map.md) for the current code layout and dependency rules.
+
 ## Included
 - Email/password login
 - Role-ready employee master: super admin, assigner, EA, doer

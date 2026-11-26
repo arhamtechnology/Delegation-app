@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatChecklistLine, formatList, formatMisReport, formatDashboardStats, formatTodayWork, formatTaskLine, formatTemplateLine, resolveAssigneeName } from '../lib/wa/format.mjs';
-import { formatDailyUpdate } from '../lib/wa/updates.mjs';
+import { formatChecklistLine, formatList, formatMisReport, formatDashboardStats, formatTodayWork, formatTaskLine, formatTemplateLine, resolveAssigneeName } from '../modules/whatsapp/format.mjs';
+import { formatDailyUpdate } from '../modules/whatsapp/updates.mjs';
 
 test('wa format 1: long lists are cut at 15 rows and stay under the WhatsApp cap', () => {
   const lines = Array.from({ length: 20 }, (_, index) => `#${index} ${'x'.repeat(60)}`);
@@ -92,7 +92,7 @@ test('wa dashboard stats: totals, per person, assigned today', () => {
 });
 
 test('wa format: checklist item and recurring task lines say when proof is mandatory', async () => {
-  const { formatChecklistLine, formatTemplateLine } = await import('../lib/wa/format.mjs');
+  const { formatChecklistLine, formatTemplateLine } = await import('../modules/whatsapp/format.mjs');
   const item = { short_code: 4, task: 'Cash report', status: 'pending', due_date: '2026-11-02', due_at: '2026-11-02T13:00:00.000Z', employee: { name: 'Varun' } };
   assert.match(formatChecklistLine({ ...item, template: { proof_required: true } }, new Date('2026-11-02T05:00:00.000Z')), /, proof mandatory$/);
   assert.doesNotMatch(formatChecklistLine({ ...item, template: { proof_required: false } }, new Date('2026-11-02T05:00:00.000Z')), /proof/);

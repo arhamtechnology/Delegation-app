@@ -1,6 +1,6 @@
-import { actorFromAuthorization, ruleResponse } from '../../../lib/server/actor';
-import { deleteTask } from '../../../lib/server/task-rules';
-import { authorizeTaskManager, taskApiError } from '../../../lib/task-server';
+import { actorFromAuthorization, ruleResponse } from '../../../lib/actor';
+import { deleteTask } from '../../../modules/tasks/task-rules';
+import { authorizeTaskManager, taskApiError } from '../../../modules/tasks/task-server';
 
 export async function DELETE(request) {
   const authorization = await authorizeTaskManager(request);
