@@ -149,7 +149,7 @@ export default function DashboardView({ initialData }) {
       </>} />
       <Toolbar search={manager ? <ToolbarSearch value={search} onChange={setSearch} placeholder="Search today's work or people" /> : null}>
         {manager && <FilterSelect label="Person" value={employeeFilter} onChange={setEmployeeFilter}><option value="all">Anyone</option>{(data?.employees || []).map((employee) => <option value={employee.id} key={employee.id}>{employee.name}</option>)}</FilterSelect>}
-        <FilterSelect label="Type" value={typeFilter} onChange={setTypeFilter}><option value="all">All work</option><option value="task">Tasks</option><option value="checklist">Checklist</option>{!manager && <option value="fms">FMS</option>}</FilterSelect>
+        <FilterSelect label="Type" value={typeFilter} onChange={setTypeFilter}><option value="all">All work</option><option value="task">Tasks</option><option value="checklist">Checklist</option>{!manager && <option value="fms">Order FMS</option>}</FilterSelect>
         <FilterSelect label="Priority" value={priorityFilter} onChange={setPriorityFilter}><option value="all">Any</option><option value="critical">Critical</option><option value="high">High</option><option value="normal">Normal</option></FilterSelect>
         <ClearFiltersButton visible={filtersActive} onClick={clearFilters} />
       </Toolbar>

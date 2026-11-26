@@ -26,7 +26,7 @@ export async function getFmsWorkItems({ employeeId, today, client, signal }) {
       sourceType: 'fms',
       title: `${step.name} · ${item.order_no}${item.customer ? ` · ${item.customer}` : ''}`,
       description: item.ref ? `${item.step === 'transport' ? 'Invoice' : 'Dispatch'} ${item.ref}` : null,
-      category: 'FMS',
+      category: 'Order FMS',
       priority: 'normal',
       status: item.done_at ? 'completed' : 'pending',
       eta,

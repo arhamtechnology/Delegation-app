@@ -99,8 +99,8 @@ export default function FmsView({ initialData }) {
   const finished = items.filter((item) => ['done', 'late'].includes(item.status));
   const onTime = finished.length ? Math.round((100 * finished.filter((item) => item.status === 'done').length) / finished.length) : null;
 
-  return <AppShell title="FMS · Sales orders" description="Order approval, dispatch, invoice and transport from the ERP, against each step's ETA.">
-    {!data ? (error ? <Surface><InlineError message={error} onRetry={load} /></Surface> : <ListSkeleton label="Loading FMS…" />) : <>
+  return <AppShell title="Order FMS" description="The order cycle from the ERP: punching and approval, dispatch, invoice and transport, against each step's ETA.">
+    {!data ? (error ? <Surface><InlineError message={error} onRetry={load} /></Surface> : <ListSkeleton label="Loading Order FMS…" />) : <>
       <StatStrip items={[
         { label: 'Open', value: items.filter((item) => ['pending', 'overdue'].includes(item.status)).length, status: 'pending' },
         { label: 'Overdue', value: items.filter((item) => item.status === 'overdue').length, status: 'overdue', tone: 'danger' },
@@ -119,7 +119,7 @@ export default function FmsView({ initialData }) {
           <FilterSelect label="Show" value={view} onChange={setView}><option value="open">Open</option><option value="overdue">Overdue</option><option value="done">Done (7 days)</option></FilterSelect>
           <FilterSelect label="Step" value={step} onChange={setStep}><option value="all">All steps</option>{data.steps.map((row) => <option key={row.code} value={row.code}>{row.name}</option>)}</FilterSelect>
         </Toolbar>
-        {!shown.length ? <ListEmpty title={view === 'done' ? 'Nothing finished in the last 7 days' : 'No open FMS work'} description="Orders punched in the ERP appear here within a minute." /> : <div className="overflow-x-auto">
+        {!shown.length ? <ListEmpty title={view === 'done' ? 'Nothing finished in the last 7 days' : 'No open order work'} description="Orders punched in the ERP appear here within a minute." /> : <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-[14px]">
             <thead className="border-b border-border text-[13px] text-muted-foreground"><tr>
               <th className="px-4 py-2 font-medium">Order</th><th className="px-2 py-2 font-medium">Step</th><th className="px-2 py-2 font-medium">Doer</th>

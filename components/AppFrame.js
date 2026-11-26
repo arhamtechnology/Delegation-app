@@ -21,7 +21,7 @@ const managerNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: 'grid', section: 'Workspace' },
   { href: '/tasks', label: 'Tasks', icon: 'clipboard', section: 'Workspace' },
   { href: '/checklist', label: 'Checklist', icon: 'checkSquare', section: 'Workspace' },
-  { href: '/fms', label: 'FMS', icon: 'activity', section: 'Manage' },
+  { href: '/fms', label: 'Order FMS', icon: 'activity', section: 'Manage' },
   { href: '/calendar', label: 'Calendar', icon: 'calendar', section: 'Manage', roles: ['super_admin', 'ea'] },
   { href: '/employees', label: 'Employees', icon: 'users', section: 'Manage' },
   { href: '/mis', label: 'MIS', icon: 'chart', section: 'Manage' },

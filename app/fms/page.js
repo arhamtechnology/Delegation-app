@@ -5,7 +5,7 @@ import { loadFmsBoard } from '../../modules/fms/fms-data';
 import { createSupabaseAdminClient } from '../../lib/supabase-server';
 import { getServerSession } from '../../modules/identity/server-session';
 
-export const metadata = { title: 'FMS' };
+export const metadata = { title: 'Order FMS' };
 
 export default async function FmsPage() {
   const session = await getServerSession();

@@ -8,12 +8,12 @@ export const runtime = 'nodejs';
 export async function GET(request) {
   const authorization = await authorizeChecklistEmployee(request, 'You must be signed in to view FMS.');
   if (authorization.response) return authorization.response;
-  if (!canManageWork(authorization.employee.role)) return checklistApiError('FMS is for directors and EAs.', 403);
+  if (!canManageWork(authorization.employee.role)) return checklistApiError('Order FMS is for directors and EAs.', 403);
   try {
     return Response.json({ success: true, ...(await loadFmsBoard(authorization.admin)) });
   } catch (error) {
     console.error('FMS board load failed.', { code: error?.code, message: error?.message });
-    return checklistApiError('FMS could not be loaded.', 500);
+    return checklistApiError('Order FMS could not be loaded.', 500);
   }
 }
 
