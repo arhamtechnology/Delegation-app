@@ -25,6 +25,7 @@ flowchart TD
 | `checklists` | Recurring templates, occurrences, completion, Excel import and working-day rules | Identity, Notifications, Work model |
 | `work` | Dashboard, work list, MIS, follow-up queries and completion proofs | Checklists, Identity, Tasks, Work model |
 | `whatsapp` | Incoming messages, proposals, alerts, transport and ERP report forwarding | Checklists, Identity, Tasks, Work, Work model |
+| `fms` | FMS flows from the ERP (Order FMS first): feed sync, step doers and ETAs, WhatsApp alerts to EAs and directors | Checklists, Identity, WhatsApp, Work model |
 
 Next.js pages and API routes in `app/` call the relevant module. Reusable UI lives in `components/`. Modules can import shared infrastructure from `lib/`, which holds Supabase client setup, cookie and cache plumbing, and date helpers. Supabase migrations stay in `supabase/migrations/`.
 

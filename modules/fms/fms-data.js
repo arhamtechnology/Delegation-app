@@ -6,16 +6,15 @@ const itemSelect = 'key,process,step,order_no,customer,ref,started_at,done_at';
 const recentMs = 7 * 24 * 60 * 60000;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** The FMS page (directors and EAs): steps with their doers, open work and work finished in the last 7 days. */
-export async function loadFmsBoard(admin, now = new Date()) {
-  const [processes, steps, open, recent, employees] = await Promise.all([
-    admin.from('fms_processes').select('code,name,live_from').eq('active', true).order('code'),
-    admin.from('fms_steps').select('process,code,name,seq,eta_minutes,doer_id,doer:employees!fms_steps_doer_id_fkey(name)').order('seq'),
-    admin.from('fms_items').select(itemSelect).is('done_at', null).eq('cancelled', false).order('started_at').limit(1000),
-    admin.from('fms_items').select(itemSelect).gte('done_at', new Date(now.getTime() - recentMs).toISOString()).order('done_at', { ascending: false }).limit(1000),
+/** One flow's FMS page (directors and EAs): steps with their doers, open work and work finished in the last 7 days. */
+export async function loadFmsBoard(admin, process, now = new Date()) {
+  const [steps, open, recent, employees] = await Promise.all([
+    admin.from('fms_steps').select('process,code,name,seq,eta_minutes,doer_id,doer:employees!fms_steps_doer_id_fkey(name)').eq('process', process).order('seq'),
+    admin.from('fms_items').select(itemSelect).eq('process', process).is('done_at', null).eq('cancelled', false).order('started_at').limit(1000),
+    admin.from('fms_items').select(itemSelect).eq('process', process).gte('done_at', new Date(now.getTime() - recentMs).toISOString()).order('done_at', { ascending: false }).limit(1000),
     admin.from('employees').select('id,name').eq('active', true).order('name'),
   ]);
-  for (const result of [processes, steps, open, recent, employees]) if (result.error) throw result.error;
+  for (const result of [steps, open, recent, employees]) if (result.error) throw result.error;
   const stepRows = steps.data.map(({ doer, ...step }) => ({ ...step, doerName: doer?.name || null }));
   const byKey = new Map(stepRows.map((step) => [`${step.process}|${step.code}`, step]));
   const items = [...open.data, ...recent.data].flatMap((item) => {
@@ -23,7 +22,7 @@ export async function loadFmsBoard(admin, now = new Date()) {
     if (!step) return [];
     return [{ ...item, stepName: step.name, seq: step.seq, doerName: step.doerName, due_at: dueAt(item, step), status: itemStatus(item, step, now) }];
   });
-  return { processes: processes.data, steps: stepRows, employees: employees.data, items, loadedAt: now.toISOString() };
+  return { steps: stepRows, employees: employees.data, items, loadedAt: now.toISOString() };
 }
 
 /** Change a step's doer and ETA. Applies to open work at once: due times are worked out from the step. */

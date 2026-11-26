@@ -1,5 +1,6 @@
 import { localDateTimeToIso } from '../../lib/business-time';
 import { supabaseBrowser } from '../../lib/supabase-browser';
+import { fmsFlowTitle } from '../work-model/fms-flows.mjs';
 
 // A doer's FMS steps (ERP sales orders) as dashboard work items: open ones from any day, plus those
 // done today. Read only: the ERP closes them. Any failure returns none, so tasks and checklists still load.
@@ -26,7 +27,7 @@ export async function getFmsWorkItems({ employeeId, today, client, signal }) {
       sourceType: 'fms',
       title: `${step.name} · ${item.order_no}${item.customer ? ` · ${item.customer}` : ''}`,
       description: item.ref ? `${item.step === 'transport' ? 'Invoice' : 'Dispatch'} ${item.ref}` : null,
-      category: 'FMS',
+      category: fmsFlowTitle(item.process),
       priority: 'normal',
       status: item.done_at ? 'completed' : 'pending',
       eta,

@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from '../../lib/supabase-server';
 import { getTransport } from '../whatsapp/transport';
 import { send } from '../whatsapp/alerts-run';
 import { directorRoles } from '../whatsapp/alerts.mjs';
+import { fmsFlowTitle } from '../work-model/fms-flows.mjs';
 import { buildFmsMessages, feedLookbackMs, feedRowToItem, fetchFmsFeed, planFmsAlerts } from './fms.mjs';
 
 const upsertChunk = 500;
@@ -69,7 +70,7 @@ export async function sendFmsAlerts(admin, transport, flow, now) {
   if (!alerts.length) return 0;
   const { eaChats, directorChats } = await loadChats(admin);
   let sent = 0;
-  for (const message of buildFmsMessages(alerts, eaChats, directorChats)) {
+  for (const message of buildFmsMessages(alerts, eaChats, directorChats, fmsFlowTitle(flow.code))) {
     try {
       await send(admin, transport, message.chatId, message.text);
       sent += 1;

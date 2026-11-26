@@ -12,3 +12,4 @@ graphify-out/
 
 # oh-my-claudecode local state
 .omc/
+.env*

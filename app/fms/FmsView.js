@@ -18,9 +18,9 @@ const statusTones = {
 };
 const refLabels = { invoice: 'Dispatch', transport: 'Invoice' };
 
-async function api(method, body) {
+async function api(method, body, process) {
   const token = await getAccessToken();
-  const response = await fetch('/api/fms', {
+  const response = await fetch(process ? `/api/fms?process=${encodeURIComponent(process)}` : '/api/fms', {
     method,
     headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: body ? JSON.stringify(body) : undefined,
@@ -64,7 +64,7 @@ function StepRow({ step, employees, onSaved }) {
   </div>;
 }
 
-export default function FmsView({ initialData }) {
+export default function FmsView({ flow, initialData }) {
   const [data, setData] = useState(initialData);
   const [error, setError] = useState('');
   const [view, setView] = useState('open');
@@ -73,12 +73,12 @@ export default function FmsView({ initialData }) {
 
   const load = useCallback(async () => {
     try {
-      setData(await api('GET'));
+      setData(await api('GET', null, flow.process));
       setError('');
     } catch (loadError) {
       setError(loadError.message);
     }
-  }, []);
+  }, [flow.process]);
 
   useEffect(() => {
     if (!initialData) load();
@@ -99,8 +99,8 @@ export default function FmsView({ initialData }) {
   const finished = items.filter((item) => ['done', 'late'].includes(item.status));
   const onTime = finished.length ? Math.round((100 * finished.filter((item) => item.status === 'done').length) / finished.length) : null;
 
-  return <AppShell title="FMS · Sales orders" description="Order approval, dispatch, invoice and transport from the ERP, against each step's ETA.">
-    {!data ? (error ? <Surface><InlineError message={error} onRetry={load} /></Surface> : <ListSkeleton label="Loading FMS…" />) : <>
+  return <AppShell title={flow.title} description={flow.description}>
+    {!data ? (error ? <Surface><InlineError message={error} onRetry={load} /></Surface> : <ListSkeleton label={`Loading ${flow.title}…`} />) : <>
       <StatStrip items={[
         { label: 'Open', value: items.filter((item) => ['pending', 'overdue'].includes(item.status)).length, status: 'pending' },
         { label: 'Overdue', value: items.filter((item) => item.status === 'overdue').length, status: 'overdue', tone: 'danger' },
@@ -119,7 +119,7 @@ export default function FmsView({ initialData }) {
           <FilterSelect label="Show" value={view} onChange={setView}><option value="open">Open</option><option value="overdue">Overdue</option><option value="done">Done (7 days)</option></FilterSelect>
           <FilterSelect label="Step" value={step} onChange={setStep}><option value="all">All steps</option>{data.steps.map((row) => <option key={row.code} value={row.code}>{row.name}</option>)}</FilterSelect>
         </Toolbar>
-        {!shown.length ? <ListEmpty title={view === 'done' ? 'Nothing finished in the last 7 days' : 'No open FMS work'} description="Orders punched in the ERP appear here within a minute." /> : <div className="overflow-x-auto">
+        {!shown.length ? <ListEmpty title={view === 'done' ? 'Nothing finished in the last 7 days' : 'No open work'} description="New work from the ERP appears here within a minute." /> : <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-[14px]">
             <thead className="border-b border-border text-[13px] text-muted-foreground"><tr>
               <th className="px-4 py-2 font-medium">Order</th><th className="px-2 py-2 font-medium">Step</th><th className="px-2 py-2 font-medium">Doer</th>
