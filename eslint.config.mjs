@@ -13,7 +13,7 @@ const moduleDependencies = {
   checklists: ['identity', 'notifications', 'work-model'],
   work: ['identity', 'tasks', 'checklists', 'work-model'],
   whatsapp: ['identity', 'tasks', 'checklists', 'work-model', 'work'],
-  fms: ['identity', 'checklists', 'whatsapp'],
+  fms: ['identity', 'checklists', 'whatsapp', 'work-model'],
 };
 
 const modulePaths = (names) => names.map((name) => `./modules/${name}`);

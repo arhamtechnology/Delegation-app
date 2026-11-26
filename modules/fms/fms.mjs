@@ -83,10 +83,10 @@ export function planFmsAlerts(items, steps, now) {
 }
 
 const headers = {
-  assigned: '🆕 Order FMS · New pending work',
-  due_soon: '⏰ Order FMS · Due in 30 minutes',
-  overdue: '⚠️ Order FMS · Overdue: the ETA has passed',
-  escalated: '🚨 Order FMS · Still pending 1 hour after the ETA',
+  assigned: '🆕 {flow} · New pending work',
+  due_soon: '⏰ {flow} · Due in 30 minutes',
+  overdue: '⚠️ {flow} · Overdue: the ETA has passed',
+  escalated: '🚨 {flow} · Still pending 1 hour after the ETA',
 };
 const stageOrder = ['assigned', 'due_soon', 'overdue', 'escalated'];
 const blocksPerSection = 10;
@@ -104,9 +104,10 @@ function block(alert) {
  * EAs get every stage, directors also get the 1-hour escalation.
  * @param {string[]} eaChats
  * @param {string[]} directorChats
+ * @param {string} flowTitle e.g. 'Order FMS'
  * @returns {{ chatId: string, text: string }[]}
  */
-export function buildFmsMessages(alerts, eaChats, directorChats) {
+export function buildFmsMessages(alerts, eaChats, directorChats, flowTitle = 'FMS') {
   const inbox = new Map();
   const add = (chatId, alert) => {
     if (!chatId) return;
@@ -123,8 +124,8 @@ export function buildFmsMessages(alerts, eaChats, directorChats) {
     text: stageOrder.filter((stage) => stages.has(stage)).map((stage) => {
       const blocks = stages.get(stage);
       const shown = blocks.slice(0, blocksPerSection);
-      if (blocks.length > shown.length) shown.push(`+${blocks.length - shown.length} more on the Order FMS page`);
-      return `${headers[stage]}\n\n${shown.join('\n\n')}`;
+      if (blocks.length > shown.length) shown.push(`+${blocks.length - shown.length} more on the ${flowTitle} page`);
+      return `${headers[stage].replace('{flow}', flowTitle)}\n\n${shown.join('\n\n')}`;
     }).join('\n\n'),
   }));
 }

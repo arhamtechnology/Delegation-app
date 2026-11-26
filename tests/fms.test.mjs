@@ -35,11 +35,11 @@ test('fms 3: EAs get every stage, directors only the escalation, doers nothing',
   const invoice = { ...item, key: 'invoice:d1', step: 'invoice', ref: 'DSP-7' };
   const fresh = [...planFmsAlerts([item], steps, at(1)), ...planFmsAlerts([invoice], steps, at(1))];
   const late = planFmsAlerts([item], steps, at(181));
-  const messages = buildFmsMessages([...fresh, ...late], ['92222@c.us'], ['93333@c.us']);
+  const messages = buildFmsMessages([...fresh, ...late], ['92222@c.us'], ['93333@c.us'], 'Order FMS');
   assert.deepEqual(messages.map((message) => message.chatId).sort(), ['92222@c.us', '93333@c.us']);
   const ea = messages.find((message) => message.chatId === '92222@c.us').text;
   const director = messages.find((message) => message.chatId === '93333@c.us').text;
-  assert.match(ea, /New pending work/);
+  assert.match(ea, /🆕 Order FMS · New pending work/);
   assert.match(ea, /Step: Invoice\nOrder: OD-29 · Sharma Traders\nDispatch: DSP-7/);
   assert.match(ea, /Doer: Not assigned/);
   assert.match(ea, /Still pending 1 hour[^]*Doer: Tukeshwar/);
