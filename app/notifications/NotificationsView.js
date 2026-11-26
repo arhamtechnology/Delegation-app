@@ -9,9 +9,10 @@ import { formatDateTime, relativeTime } from '../../components/UI';
 import { InlineError, ListEmpty, ListSkeleton, Surface } from '../../components/Workflow';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getCurrentEmployee } from '../../lib/auth';
-import { markAllNotificationsRead, markNotificationRead, signalNotificationsChanged } from '../../lib/notifications';
-import { isFreshRender, loadNotificationsPage } from '../../lib/page-data';
+import { getCurrentEmployee } from '../../modules/identity/auth';
+import { markAllNotificationsRead, markNotificationRead, signalNotificationsChanged } from '../../modules/notifications/notifications';
+import { isFreshRender } from '../../lib/render-freshness';
+import { loadNotificationsPage } from '../../modules/notifications/inbox';
 
 const tabs = [['all', 'All'], ['unread', 'Unread'], ['read', 'Read']];
 

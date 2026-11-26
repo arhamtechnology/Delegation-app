@@ -5,9 +5,10 @@ import AppShell from '../../components/AppShell';
 import { ClearFiltersButton, FilterDate, FilterSelect, InlineError, ListEmpty, ListSkeleton, MetaChip, Surface, SurfaceHeader, Toolbar, ToolbarSearch } from '../../components/Workflow';
 import { GroupedWorkList, WorkColumnsHeader, WorkItemRow } from '../../components/WorkList';
 import { Button } from '@/components/ui/button';
-import { getCurrentEmployee } from '../../lib/auth';
-import { isFreshRender, loadFollowUpData } from '../../lib/page-data';
-import { getWorkItemStatus } from '../../lib/work-data';
+import { getCurrentEmployee } from '../../modules/identity/auth';
+import { isFreshRender } from '../../lib/render-freshness';
+import { loadFollowUpData } from '../../modules/work/follow-up-page';
+import { getWorkItemStatus } from '../../modules/work-model/work-items.mjs';
 
 function formatDay(value) {
   if (!value) return '—';

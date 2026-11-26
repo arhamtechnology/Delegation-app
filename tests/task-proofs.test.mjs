@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fitWithin, formatBytes } from '../lib/proof-image.mjs';
-import { cleanupTaskProofs } from '../lib/server/task-proof-cleanup.mjs';
+import { fitWithin, formatBytes } from '../modules/work/proof-image.mjs';
+import { cleanupTaskProofs } from '../modules/work/task-proof-cleanup.mjs';
 
 test('proof image: phone and desktop screenshots shrink to readable sizes, small ones stay as they are', () => {
   assert.deepEqual(fitWithin(1170, 2532), { width: 924, height: 2000 }, 'iPhone screenshot: long edge capped');

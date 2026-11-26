@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createSupabaseAdminClient } from '../../../../lib/supabase-server';
-import { runWhatsAppAlerts } from '../../../../lib/wa/alerts-run';
+import { runWhatsAppAlerts } from '../../../../modules/whatsapp/alerts-run';
+import { runFmsTick } from '../../../../modules/fms/fms-run';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -24,7 +25,13 @@ async function authorized(request) {
 export async function POST(request) {
   if (!(await authorized(request))) return Response.json({ ok: false }, { status: 401 });
   try {
-    return Response.json({ ok: true, ...(await runWhatsAppAlerts()) });
+    const result = await runWhatsAppAlerts();
+    // FMS is separate: its failure (say, before its migration is applied) never stops task alerts.
+    const fms = await runFmsTick().catch((error) => {
+      console.error('FMS run failed.', { code: error?.code, message: error?.message });
+      return { failed: true };
+    });
+    return Response.json({ ok: true, ...result, fms });
   } catch (error) {
     console.error('WhatsApp alerts run failed.', { code: error?.code, message: error?.message });
     return Response.json({ ok: false }, { status: 500 });

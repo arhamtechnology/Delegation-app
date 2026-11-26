@@ -1,15 +1,8 @@
 import { createSupabaseAdminClient, createSupabaseUserClient, getBearerToken } from '../../../../lib/supabase-server';
-import { getChecklistBusinessDate, isChecklistDueOnDate, localDateTimeToIso } from '../../../../lib/checklist-time';
-import { isSunday, reconcileOpenChecklistItemsForNonWorkingDays } from '../../../../lib/checklist-non-working-day';
-
-const timeZone = process.env.CHECKLIST_TIMEZONE || 'Asia/Kolkata';
+import { generateChecklistItems } from '../../../../modules/checklists/checklist-generation';
 
 function responseError(message, status) {
   return Response.json({ success: false, created: 0, skipped: 0, error: message }, { status });
-}
-
-function businessDate(value = new Date()) {
-  return getChecklistBusinessDate(value, timeZone);
 }
 
 async function authorize(request) {
@@ -33,53 +26,11 @@ async function authorize(request) {
   return { mode: 'employee' };
 }
 
-async function generate() {
-  const admin = createSupabaseAdminClient();
-  const today = businessDate();
-  const { data: templates, error: templateError } = await admin
-    .from('checklist_templates')
-    .select('id,employee_id,task,frequency,weekday,day_of_month,monthly_days,start_date,due_time')
-    .eq('active', true);
-  if (templateError) throw templateError;
-
-  const dueTemplates = (templates || []).filter((template) => isChecklistDueOnDate(template, today));
-  const rows = dueTemplates.map((template) => ({
-    template_id: template.id,
-    employee_id: template.employee_id,
-    task: template.task,
-    due_date: today,
-    due_at: localDateTimeToIso(today, template.due_time, timeZone),
-    status: isSunday(today) ? 'deactivated' : 'pending',
-  }));
-
-  let created = 0;
-  if (rows.length) {
-    const { data, error } = await admin
-      .from('checklist_items')
-      .upsert(rows, { onConflict: 'template_id,due_date', ignoreDuplicates: true })
-      .select('id');
-    if (error) throw error;
-    created = data?.length || 0;
-  }
-
-  const reconciliation = await reconcileOpenChecklistItemsForNonWorkingDays(admin);
-
-  return {
-    date: today,
-    scanned: templates?.length || 0,
-    due: rows.length,
-    created,
-    skipped: Math.max(rows.length - created, 0),
-    deactivatedNonWorkingDayItems: reconciliation.deactivated,
-    markedOverdue: reconciliation.markedOverdue,
-  };
-}
-
 async function handler(request) {
   const authorization = await authorize(request);
   if (authorization.error) return authorization.error;
   try {
-    return Response.json({ success: true, ok: true, ...(await generate()) });
+    return Response.json({ success: true, ok: true, ...(await generateChecklistItems(createSupabaseAdminClient())) });
   } catch (error) {
     console.error('Checklist generation failed.', { code: error.code, message: error.message });
     if (/(due_at|due_time|monthly_days|checklist_items|checklist_templates|national_holidays|employee_non_working_days)/i.test(error.message || '') && /(column|relation|schema cache|does not exist)/i.test(error.message || '')) {

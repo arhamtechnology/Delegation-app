@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canPropose, deleteTaskLabel, deleteTemplateLabel } from '../lib/wa/permissions.mjs';
+import { canPropose, deleteTaskLabel, deleteTemplateLabel } from '../modules/whatsapp/permissions.mjs';
 
 test('wa permissions 1: assigners cannot change leaves or holidays, EAs and super admins can', () => {
   for (const kind of ['leave_add', 'leave_remove', 'holiday_add', 'holiday_remove']) {

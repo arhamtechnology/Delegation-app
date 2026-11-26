@@ -1,5 +1,6 @@
 'use client';
 
+import { canManageWork } from '../../../modules/identity/roles.mjs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { pageContainerClass } from '../../../components/AppShell';
@@ -11,11 +12,12 @@ import { ListEmpty, PersonChip, PriorityIcon, Property, PropertyList, StatusIcon
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { canCreateTasks, getAuthenticatedUser, getCurrentEmployee, peekCurrentEmployee } from '../../../lib/auth';
-import { isFreshRender, loadTaskDetail } from '../../../lib/page-data';
-import { formatTaskDeadline, getTaskStatus, setTaskCompletion } from '../../../lib/task-data';
+import { getAuthenticatedUser, getCurrentEmployee, peekCurrentEmployee } from '../../../modules/identity/auth';
+import { isFreshRender } from '../../../lib/render-freshness';
+import { loadTaskDetail } from '../../../modules/tasks/task-detail';
+import { formatTaskDeadline, getTaskStatus, setTaskCompletion } from '../../../modules/tasks/task-data';
 import { supabaseBrowser } from '../../../lib/supabase-browser';
-import { isProofUpdate, taskHasProof } from '../../../lib/task-proofs';
+import { isProofUpdate, taskHasProof } from '../../../modules/work/task-proofs';
 import { ProofDialog, ProofPanel, ProofRequirementSelect } from '../../../components/TaskProof';
 
 const statusLabels = { pending: 'Pending', overdue: 'Overdue', completed: 'Completed' };
@@ -157,7 +159,7 @@ export default function TaskDetailView({ id, initialData, initialEmployee }) {
             <Property label="Due"><span className={cn(taskStatus === 'overdue' && 'font-medium text-destructive')}>{formatTaskDeadline(task, { includeYear: true })}</span></Property>
             <Property label="Start">{formatDate(task.start_date)}</Property>
             <Property label="Category">{task.category || 'General'}</Property>
-            <Property label="Proof">{canCreateTasks(currentEmployee?.role) ? <ProofRequirementSelect value={Boolean(task.proof_required)} saving={proofSaving} onChange={changeProofRequired} /> : task.proof_required ? 'Mandatory' : 'Optional'}{proofs.length ? ` · ${proofs.length} screenshot${proofs.length === 1 ? '' : 's'}` : ''}</Property>
+            <Property label="Proof">{canManageWork(currentEmployee?.role) ? <ProofRequirementSelect value={Boolean(task.proof_required)} saving={proofSaving} onChange={changeProofRequired} /> : task.proof_required ? 'Mandatory' : 'Optional'}{proofs.length ? ` · ${proofs.length} screenshot${proofs.length === 1 ? '' : 's'}` : ''}</Property>
             <Property label="Updated"><span suppressHydrationWarning>{relativeTime(task.updated_at || task.created_at)}</span></Property>
           </PropertyList>
         </Surface>

@@ -3,7 +3,7 @@ import Script from 'next/script';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AppFrame from '../components/AppFrame';
 import InstallApp from '../components/InstallApp';
-import { getServerSession, getSidebarDefaultOpen } from '../lib/server-session';
+import { getServerSession, getSidebarDefaultOpen } from '../modules/identity/server-session';
 import './globals.css';
 
 const geist = Geist({ subsets: ['latin'], display: 'swap', variable: '--font-geist' });

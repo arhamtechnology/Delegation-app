@@ -1,6 +1,7 @@
 import TasksView from './TasksView';
-import { loadTasksData, parseTaskFilters, withRenderTime } from '../../lib/page-data';
-import { getServerSession } from '../../lib/server-session';
+import { loadTasksData, parseTaskFilters } from '../../modules/work/task-workspace';
+import { withRenderTime } from '../../lib/render-freshness';
+import { getServerSession } from '../../modules/identity/server-session';
 
 export const metadata = { title: 'Tasks' };
 

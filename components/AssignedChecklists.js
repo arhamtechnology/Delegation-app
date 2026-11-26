@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getAccessToken } from '../lib/auth';
-import { formatChecklistDays, formatChecklistTime } from '../lib/checklist-data';
-import { formatChecklistDate } from '../lib/checklist-time';
+import { getAccessToken } from '../modules/identity/auth';
+import { formatChecklistDays, formatChecklistTime } from '../modules/checklists/checklist-data';
+import { formatChecklistDate } from '../modules/checklists/checklist-time';
 import { InlineError, Surface, SurfaceHeader } from './Workflow';
 
 export default function AssignedChecklists({ refreshKey = 0 }) {

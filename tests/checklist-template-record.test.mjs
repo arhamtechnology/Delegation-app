@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { normalizeTemplateRecord, templateFrequencies } from '../lib/checklist-template-record.mjs';
+import { normalizeTemplateRecord, templateFrequencies } from '../modules/checklists/checklist-template-record.mjs';
 
 const weekly = { employee_id: 'e', task: ' Petty cash ', frequency: 'weekly', weekday: 1, start_date: '2026-10-27', due_time: '10:00' };
 
@@ -26,7 +26,7 @@ test('template record 3: invalid recurrence and time are rejected with the app m
 });
 
 test('template record: proof_required is saved only when chosen, so other edits keep the current setting', async () => {
-  const { normalizeTemplateRecord } = await import('../lib/checklist-template-record.mjs');
+  const { normalizeTemplateRecord } = await import('../modules/checklists/checklist-template-record.mjs');
   const base = { employee_id: 'e1', task: 'Cash report', frequency: 'daily', start_date: '2026-11-02', due_time: '18:30' };
   assert.equal(normalizeTemplateRecord({ ...base, proof_required: true }).proof_required, true);
   assert.equal(normalizeTemplateRecord({ ...base, proof_required: false }).proof_required, false);

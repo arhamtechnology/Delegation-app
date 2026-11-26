@@ -1,6 +1,7 @@
 import TaskDetailView from './TaskDetailView';
-import { loadTaskDetail, withRenderTime } from '../../../lib/page-data';
-import { getServerSession } from '../../../lib/server-session';
+import { loadTaskDetail } from '../../../modules/tasks/task-detail';
+import { withRenderTime } from '../../../lib/render-freshness';
+import { getServerSession } from '../../../modules/identity/server-session';
 
 export const metadata = { title: 'Task' };
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { executeProposals } from '../lib/wa/execute-core.mjs';
+import { executeProposals } from '../modules/whatsapp/execute-core.mjs';
 
 const actor = { id: 'dir', name: 'Director', role: 'ea', auth_user_id: 'auth-dir', chatId: '919800000000@c.us' };
 

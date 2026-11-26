@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyEmployeeLeave, getSavedLeaveDates } from '../lib/calendar-leave.mjs';
-import { getTodayInIndia } from '../lib/checklist-time.js';
+import { classifyEmployeeLeave, getSavedLeaveDates } from '../modules/checklists/calendar-leave.mjs';
+import { getTodayInIndia } from '../lib/business-time.js';
 
 const today = '2026-09-23';
 const baseGroups = [

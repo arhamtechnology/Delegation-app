@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { addFollowUpMetadata, getNextWorkingDate, isFollowUpEligible } from '../lib/follow-up-tasks.mjs';
-import { getUnifiedWorkItemStatus, getWorkSummary } from '../lib/work-summary.mjs';
+import { addFollowUpMetadata, getNextWorkingDate, isFollowUpEligible } from '../modules/work-model/follow-up-tasks.mjs';
+import { getUnifiedWorkItemStatus, getWorkSummary } from '../modules/work-model/work-summary.mjs';
 
 const weeklySunday = {
   id: 'weekly-sunday',
@@ -53,7 +53,7 @@ test('follow-up 7: incomplete follow-up remains visible with effective overdue s
 
 test('follow-up 8: generation preserves one occurrence per template and original date', async () => {
   const [generator, migration] = await Promise.all([
-    readFile(new URL('../app/api/checklist/generate/route.js', import.meta.url), 'utf8'),
+    readFile(new URL('../modules/checklists/checklist-generation.js', import.meta.url), 'utf8'),
     readFile(new URL('../supabase/migrations/003_checklist.sql', import.meta.url), 'utf8'),
   ]);
   assert.match(generator, /onConflict: 'template_id,due_date', ignoreDuplicates: true/);

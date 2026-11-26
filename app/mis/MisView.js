@@ -7,11 +7,13 @@ import { ClearFiltersButton, FilterDate, FilterSelect, InlineError, ListEmpty, L
 import { WorkColumnsHeader, WorkItemRow } from '../../components/WorkList';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getCurrentEmployee } from '../../lib/auth';
-import { getChecklistTimeZone } from '../../lib/checklist-data';
-import { isFreshRender, loadMisData } from '../../lib/page-data';
-import { getWorkItemsPage, getWorkItemStatus } from '../../lib/work-data';
-import { getPageCount, WORK_PAGE_SIZE } from '../../lib/work-list.mjs';
+import { getCurrentEmployee } from '../../modules/identity/auth';
+import { getChecklistTimeZone } from '../../modules/checklists/checklist-data';
+import { isFreshRender } from '../../lib/render-freshness';
+import { loadMisData } from '../../modules/work/mis';
+import { getWorkItemsPage } from '../../modules/work/work-list-query';
+import { getWorkItemStatus } from '../../modules/work-model/work-items.mjs';
+import { getPageCount, WORK_PAGE_SIZE } from '../../modules/work-model/work-list.mjs';
 
 const reportStatuses = [
   ['Pending', 'pending', 'bg-[#9aa0ad]'],

@@ -6,8 +6,8 @@ import { Spinner } from './Loader';
 import { Modal } from './UI';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatBytes, optimiseProofImage, TASK_PROOF_RETENTION_DAYS } from '../lib/proof-image.mjs';
-import { completeTarget, signedProofUrl, uploadProof } from '../lib/task-proofs';
+import { formatBytes, optimiseProofImage, TASK_PROOF_RETENTION_DAYS } from '../modules/work/proof-image.mjs';
+import { completeTarget, signedProofUrl, uploadProof } from '../modules/work/task-proofs';
 
 // Thumbnail for a stored proof screenshot. A null path means the 30-day cleanup already removed it.
 export function ProofThumb({ path, className }) {

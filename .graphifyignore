@@ -1,0 +1,14 @@
+.env*
+.agents/
+.codex/
+node_modules/
+.next/
+.expo/
+.gradle/
+.cxx/
+build/
+dist/
+coverage/
+graphify-out/
+package-lock.json
+*.apk

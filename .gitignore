@@ -5,6 +5,7 @@ node_modules
 .vercel
 .DS_Store
 supabase/.temp/
+graphify-out/
 
 # Plan execution scratch
 .superpowers/

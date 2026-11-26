@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { misRange } from '../lib/wa/dates.mjs';
+import { misRange } from '../modules/whatsapp/dates.mjs';
 
 const tuesday = new Date('2026-10-27T06:00:00.000Z'); // 27 Oct 2026, 11:30 IST
 

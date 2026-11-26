@@ -1,6 +1,6 @@
-import { authorizeChecklistEmployee, checklistApiError } from '../../../../lib/checklist-server';
-import { getChecklistBusinessDate } from '../../../../lib/checklist-time';
-import { loadAssignedChecklists } from '../../../../lib/server/assigned-checklists.mjs';
+import { authorizeChecklistEmployee, checklistApiError } from '../../../../modules/checklists/checklist-server';
+import { getWorkspaceDate } from '../../../../lib/business-time';
+import { loadAssignedChecklists } from '../../../../modules/checklists/assigned-checklists.mjs';
 
 export const runtime = 'nodejs';
 
@@ -10,7 +10,7 @@ const timeZone = process.env.CHECKLIST_TIMEZONE || 'Asia/Kolkata';
 export async function GET(request) {
   const authorization = await authorizeChecklistEmployee(request);
   if (authorization.response) return authorization.response;
-  const today = getChecklistBusinessDate(new Date(), timeZone);
+  const today = getWorkspaceDate(new Date(), timeZone);
   try {
     return Response.json({ success: true, today, checklists: await loadAssignedChecklists(authorization.admin, authorization.employee.id, today) });
   } catch (error) {

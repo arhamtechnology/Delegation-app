@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildAlertMessages, buildHourlyDigest, dueSummaryDate, hourlyAnchor, isHourlyReminderWindow, planChecklistAlerts, planChecklistItemAlerts, planTaskAlerts, reminderStage } from '../lib/wa/alerts.mjs';
+import { buildAlertMessages, buildHourlyDigest, dueSummaryDate, hourlyAnchor, isHourlyReminderWindow, planChecklistAlerts, planChecklistItemAlerts, planTaskAlerts, reminderStage } from '../modules/whatsapp/alerts.mjs';
 
 const eta = '2026-10-29T12:00:00.000Z'; // 5:30 PM India time
 const at = (minutesFromEta) => new Date(Date.parse(eta) + minutesFromEta * 60000);
@@ -97,7 +97,7 @@ test('wa alerts 5: the daily summary is due from 6 PM India time', () => {
 });
 
 test('wa alerts 6: bot messages show 12-hour times', async () => {
-  const { formatClock } = await import('../lib/wa/format.mjs');
+  const { formatClock } = await import('../modules/whatsapp/format.mjs');
   assert.equal(formatClock('18:30'), '6:30 PM');
   assert.equal(formatClock('09:05:00'), '9:05 AM');
   assert.equal(formatClock('00:15'), '12:15 AM');
@@ -107,7 +107,7 @@ test('wa alerts 6: bot messages show 12-hour times', async () => {
 });
 
 test('wa alerts 7: a task missing details gets a fixed question naming only what is missing', async () => {
-  const { missingFields, missingTaskQuestion } = await import('../lib/wa/tools.mjs');
+  const { missingFields, missingTaskQuestion } = await import('../modules/whatsapp/tools.mjs');
   assert.equal(missingTaskQuestion([]), null);
   assert.equal(
     missingTaskQuestion(missingFields('task_change', { action: 'create', assignee: 'Varun' })),
@@ -121,7 +121,7 @@ test('wa alerts 7: a task missing details gets a fixed question naming only what
 });
 
 test('wa alerts 8: a checklist task missing details gets a fixed question, including the time', async () => {
-  const { missingChecklistQuestion, missingFields } = await import('../lib/wa/tools.mjs');
+  const { missingChecklistQuestion, missingFields } = await import('../modules/whatsapp/tools.mjs');
   assert.equal(missingChecklistQuestion([]), null);
   assert.equal(
     missingChecklistQuestion(missingFields('checklist', { action: 'template_create', assignee: 'Varun', task: 'Cash report', frequency: 'daily', proof_required: false }), 'Cash report'),
@@ -131,7 +131,7 @@ test('wa alerts 8: a checklist task missing details gets a fixed question, inclu
 });
 
 test('wa alerts 9: a new task always asks whether proof is mandatory or optional, last', async () => {
-  const { missingFields, missingTaskQuestion } = await import('../lib/wa/tools.mjs');
+  const { missingFields, missingTaskQuestion } = await import('../modules/whatsapp/tools.mjs');
   const complete = { action: 'create', assignee: 'Varun', title: 'GST', description: 'File returns', due_date: '2026-10-30', due_time: '17:00' };
   assert.equal(missingTaskQuestion(missingFields('task_change', complete)), 'To create this task, please send:\n• Proof: mandatory or optional (must a screenshot be added before it can be completed?)');
   assert.deepEqual(missingFields('task_change', { ...complete, proof_required: true }), []);
@@ -139,7 +139,7 @@ test('wa alerts 9: a new task always asks whether proof is mandatory or optional
 });
 
 test('wa alerts 10: a new recurring checklist task always asks whether proof is mandatory or optional', async () => {
-  const { missingChecklistQuestion, missingFields } = await import('../lib/wa/tools.mjs');
+  const { missingChecklistQuestion, missingFields } = await import('../modules/whatsapp/tools.mjs');
   const complete = { action: 'template_create', assignee: 'Varun', task: 'Cash report', frequency: 'daily', due_time: '18:30' };
   assert.equal(missingChecklistQuestion(missingFields('checklist', complete), 'Cash report'), 'To add "Cash report", please send:\n• Proof: mandatory or optional (must a screenshot be added before it can be marked done?)');
   assert.deepEqual(missingFields('checklist', { ...complete, proof_required: true }), []);

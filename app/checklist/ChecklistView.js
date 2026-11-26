@@ -1,5 +1,6 @@
 'use client';
 
+import { canManageWork } from '../../modules/identity/roles.mjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import { Icon } from '../../components/Icons';
@@ -8,15 +9,18 @@ import { ClearFiltersButton, FilterSelect, InlineError, ListEmpty, ListGroup, Li
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../lib/auth';
+import { getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../modules/identity/auth';
 import { peekQuery, queryKey, setQuery } from '../../lib/query-cache';
-import { canManageChecklists, checklistFrequencies, checklistWeekdays, formatChecklistDays, formatChecklistDueAt, formatChecklistTime, ensureChecklistGeneratedToday, formatEmployeeId, getBusinessDate, getChecklistStatus, getChecklistTemplatesPage, setChecklistCompletion, triggerChecklistGeneration } from '../../lib/checklist-data';
-import { isFreshRender, loadChecklistData } from '../../lib/page-data';
-import { getPageCount, WORK_PAGE_SIZE } from '../../lib/work-list.mjs';
+import { checklistFrequencies, checklistWeekdays, formatChecklistDays, formatChecklistDueAt, formatChecklistTime, formatEmployeeId, getBusinessDate, getChecklistStatus } from '../../modules/checklists/checklist-data';
+import { getChecklistTemplatesPage } from '../../modules/checklists/checklist-queries';
+import { ensureChecklistGeneratedToday, setChecklistCompletion, triggerChecklistGeneration } from '../../modules/checklists/checklist-actions';
+import { isFreshRender } from '../../lib/render-freshness';
+import { loadChecklistData } from '../../modules/checklists/checklist-pages';
+import { getPageCount, WORK_PAGE_SIZE } from '../../modules/work-model/work-list.mjs';
 import AssignedChecklists from '../../components/AssignedChecklists';
 import { Spinner } from '../../components/Loader';
 import { ProofDialog } from '../../components/TaskProof';
-import { isProofRequiredError } from '../../lib/task-proofs';
+import { isProofRequiredError } from '../../modules/work/task-proofs';
 
 const emptyForm = { employee_id: '', task: '', frequency: 'daily', weekday: '1', monthly_days: ['1'], start_date: '', due_time: '17:00', day_of_month: '1', active: true, proof_required: null };
 const emptyBulkValues = { employee_id: '', task: '', frequency: 'daily', weekday: '1', monthly_days: ['1'], start_date: '', due_time: '17:00', active: true, proof_required: true };
@@ -117,7 +121,7 @@ export default function ChecklistView({ initialData }) {
     const { user, employee, error: employeeError } = await getCurrentEmployee();
     if (!user) { setLoading(false); return; }
     if (employeeError || !employee) { setError('Unable to load your workspace profile. Please try again.'); setLoading(false); return; }
-    const manager = canManageChecklists(employee.role);
+    const manager = canManageWork(employee.role);
     const filters = { page: templatePage, search: debouncedTemplateSearch, employeeId: templateEmployeeFilter, frequency: templateFrequencyFilter, status: templateStatusFilter };
     // Show existing items right away; reload only if generation actually created new ones.
     const [initialResponse, generationResponse] = await Promise.all([loadChecklistData({ employee, filters }), manager && generate ? ensureChecklistGeneratedToday() : Promise.resolve(null)]);

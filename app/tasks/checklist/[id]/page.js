@@ -1,6 +1,7 @@
 import ChecklistDetailView from './ChecklistDetailView';
-import { loadChecklistDetail, withRenderTime } from '../../../../lib/page-data';
-import { getServerSession } from '../../../../lib/server-session';
+import { loadChecklistDetail } from '../../../../modules/checklists/checklist-pages';
+import { withRenderTime } from '../../../../lib/render-freshness';
+import { getServerSession } from '../../../../modules/identity/server-session';
 
 export const metadata = { title: 'Checklist item' };
 

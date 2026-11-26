@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient, createSupabaseUserClient, getBearerToken } from '../../../../../lib/supabase-server';
-import { ruleResponse } from '../../../../../lib/server/actor';
-import { setChecklistItemCompletion } from '../../../../../lib/server/checklist-item-rules';
+import { ruleResponse } from '../../../../../lib/actor';
+import { setChecklistItemCompletion } from '../../../../../modules/checklists/checklist-item-rules';
 
 function errorResponse(message, status) {
   return Response.json({ success: false, error: message }, { status });

@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { after } from 'next/server';
 import { createSupabaseAdminClient } from '../../../../lib/supabase-server';
-import { processIncomingMessage } from '../../../../lib/wa/process';
+import { processIncomingMessage } from '../../../../modules/whatsapp/process';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;

@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { createSupabaseAdminClient, getBearerToken } from '../../../../../lib/supabase-server';
-import { cleanupTaskProofs } from '../../../../../lib/server/task-proof-cleanup.mjs';
+import { cleanupTaskProofs } from '../../../../../modules/work/task-proof-cleanup.mjs';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;

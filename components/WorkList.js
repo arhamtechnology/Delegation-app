@@ -2,10 +2,10 @@
 
 import { ListGroup, MetaChip, PersonChip, WorkRow, WorkColumnsHeader } from './Workflow';
 import { cn } from '@/lib/utils';
-import { formatChecklistDueAt } from '../lib/checklist-data';
-import { formatTaskDeadline } from '../lib/task-data';
-import { getWorkItemStatus } from '../lib/work-data';
-import { sortWorkItemsChronologically } from '../lib/work-items.mjs';
+import { formatChecklistDueAt } from '../modules/checklists/checklist-data';
+import { formatTaskDeadline } from '../modules/tasks/task-data';
+import { getWorkItemStatus } from '../modules/work-model/work-items.mjs';
+import { sortWorkItemsChronologically } from '../modules/work-model/work-items.mjs';
 
 export const workStatusGroups = [
   { status: 'overdue', title: 'Overdue' },
@@ -14,6 +14,8 @@ export const workStatusGroups = [
 ];
 
 export function getWorkHref(workItem) {
+  // FMS steps have no page here: the ERP is where they are done.
+  if (workItem.kind === 'fms') return null;
   return workItem.kind === 'checklist' ? `/tasks/checklist/${workItem.id}` : `/tasks/${workItem.id}`;
 }
 

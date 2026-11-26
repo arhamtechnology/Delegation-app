@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { getPageCount, getWorkQueryError, isLatestRequest, normalizeWorkListRequest, WORK_PAGE_SIZE, WORK_QUERY_MIGRATION } from '../lib/work-list.mjs';
+import { getPageCount, getWorkQueryError, isLatestRequest, normalizeWorkListRequest, WORK_PAGE_SIZE, WORK_QUERY_MIGRATION } from '../modules/work-model/work-list.mjs';
 
 test('work list uses a bounded first page', () => {
   assert.deepEqual(normalizeWorkListRequest({}), {
@@ -53,19 +53,17 @@ test('missing optimized query objects identify the required migration', () => {
   assert.equal(getWorkQueryError(unrelatedError), unrelatedError);
 });
 
-test('task UI debounces search and cancels obsolete requests', async () => {
-  const source = await readFile(new URL('../app/tasks/page.js', import.meta.url), 'utf8');
-  assert.match(source, /setTimeout\([\s\S]*?, 300\)/);
-  assert.match(source, /AbortController/);
-  assert.match(source, /isLatestRequest/);
-  assert.match(source, /Tasks could not be loaded/);
-  assert.match(source, /task-loading-list/);
+test('task UI debounces search and discards obsolete responses', async () => {
+  const source = await readFile(new URL('../app/tasks/TasksView.js', import.meta.url), 'utf8');
+  assert.match(source, /setTimeout\([\s\S]*?setDebouncedSearch\(search\.trim\(\)\)/);
+  assert.match(source, /clearTimeout\(timer\)/);
+  assert.match(source, /if \(requestId !== requestIdsRef\.current\[sectionStatus\]\) return;/);
 });
 
 test('database read models preserve RLS and deterministic ordering', async () => {
   const [migration, dataSource] = await Promise.all([
     readFile(new URL('../supabase/migrations/20261024061358_optimize_work_list_queries.sql', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/work-data.js', import.meta.url), 'utf8'),
+    readFile(new URL('../modules/work/work-list-query.js', import.meta.url), 'utf8'),
   ]);
   assert.match(migration, /security_invoker = true/);
   assert.match(migration, /grant select on public\.work_items to authenticated/);
@@ -73,20 +71,19 @@ test('database read models preserve RLS and deterministic ordering', async () =>
   assert.match(dataSource, /order\('sort_group'/);
   assert.match(dataSource, /order\('sort_key'/);
   assert.match(dataSource, /order\('id'/);
-  assert.match(dataSource, /import \{ getWorkQueryError, normalizeWorkListRequest, validateWorkReportPayload \} from '\.\/work-list\.mjs';/);
   assert.match(dataSource, /const request = normalizeWorkListRequest\(input\);/);
 });
 
 test('dashboard uses the aggregate RPC and bounded work-page query instead of loading all history', async () => {
-  const [dashboardSource, dataSource] = await Promise.all([
-    readFile(new URL('../app/dashboard/page.js', import.meta.url), 'utf8'),
-    readFile(new URL('../lib/work-data.js', import.meta.url), 'utf8'),
+  const [dashboardSource, dataSource, reportSource] = await Promise.all([
+    readFile(new URL('../app/dashboard/DashboardView.js', import.meta.url), 'utf8'),
+    readFile(new URL('../modules/work/dashboard.js', import.meta.url), 'utf8'),
+    readFile(new URL('../modules/work/work-report.js', import.meta.url), 'utf8'),
   ]);
-  assert.match(dashboardSource, /dynamic\(\(\) => import\('\.\.\/\.\.\/components\/DashboardTodayWork'\)/);
-  assert.match(dashboardSource, /dashboardAbortRef\.current\?\.abort\(\)/);
-  assert.match(dashboardSource, /const controller = new AbortController\(\);/);
-  assert.match(dataSource, /getWorkReport\(\)/);
-  assert.match(dataSource, /getWorkItemsPage\(\{ dueDate: today, pageSize: WORK_PAGE_SIZE, includeCount: false \}\)/);
-  assert.match(dataSource, /getWorkReport\(\{ signal \}\)/);
-  assert.doesNotMatch(dataSource, /getUnifiedWorkItems\(\{ detail: 'list', now \}\)/);
+  assert.match(dashboardSource, /abortRef\.current\?\.abort\(\)/);
+  assert.match(dashboardSource, /loadDashboardData\(\{ employee, signal: controller\.signal \}\)/);
+  assert.match(dataSource, /getWorkReport\(\{ from: today, to: today, signal, client \}\)/);
+  assert.match(dataSource, /getWorkItemsPage\(\{ dueDate: today, pageSize: \d+, includeCount: false, signal, client \}\)/);
+  assert.match(reportSource, /\.rpc\('get_work_report'/);
+  assert.doesNotMatch(dataSource, /getLegacyFollowUpItems/);
 });

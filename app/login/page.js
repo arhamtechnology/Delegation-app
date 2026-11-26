@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { clearAuthCache, getCurrentEmployee, syncAuthSession } from '../../lib/auth';
+import { clearAuthCache, getCurrentEmployee, syncAuthSession } from '../../modules/identity/auth';
 import { supabaseBrowser } from '../../lib/supabase-browser';
 import { AuthLayout, AuthMessage } from '../../components/AuthLayout';
 import { Loader, Spinner } from '../../components/Loader';

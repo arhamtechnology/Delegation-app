@@ -1,5 +1,7 @@
 'use client';
 
+import { canManageWork } from '../../../../modules/identity/roles.mjs';
+import { canCompleteChecklist } from '../../../../modules/checklists/checklist-permissions.mjs';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityFeed, postOptimisticUpdate } from '../../../../components/ActivityFeed';
@@ -10,10 +12,12 @@ import { formatDate } from '../../../../components/UI';
 import { ListEmpty, PersonChip, Property, PropertyList, StatusIcon, Surface } from '../../../../components/Workflow';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../../../lib/auth';
-import { addChecklistItemUpdate, canCompleteChecklist, checklistFrequencies, checklistManagerRoles, formatChecklistDueAt, getChecklistStatus, setChecklistCompletion } from '../../../../lib/checklist-data';
-import { isFreshRender, loadChecklistDetail } from '../../../../lib/page-data';
-import { isProofUpdate, taskHasProof } from '../../../../lib/task-proofs';
+import { getAccessToken, getCurrentEmployee, peekCurrentEmployee } from '../../../../modules/identity/auth';
+import { checklistFrequencies, formatChecklistDueAt, getChecklistStatus } from '../../../../modules/checklists/checklist-data';
+import { addChecklistItemUpdate, setChecklistCompletion } from '../../../../modules/checklists/checklist-actions';
+import { isFreshRender } from '../../../../lib/render-freshness';
+import { loadChecklistDetail } from '../../../../modules/checklists/checklist-pages';
+import { isProofUpdate, taskHasProof } from '../../../../modules/work/task-proofs';
 import { ProofDialog, ProofPanel, ProofRequirementSelect, ProofThumb } from '../../../../components/TaskProof';
 
 const statusLabels = { pending: 'Pending', overdue: 'Overdue', completed: 'Completed', deactivated: 'Deactivated' };
@@ -110,7 +114,7 @@ export default function ChecklistDetailView({ id, initialData, initialEmployee }
   const canComplete = canCompleteChecklist(currentEmployee?.role, currentEmployee?.id, item.employee_id) && status !== 'deactivated';
   const proofs = updates.filter((update) => isProofUpdate(update) && !update.pending);
   const proofRequired = Boolean(item.template?.proof_required);
-  const canManage = checklistManagerRoles.includes(currentEmployee?.role);
+  const canManage = canManageWork(currentEmployee?.role);
   return <div className={pageContainerClass}>
     <div className="mb-4 flex items-center justify-between gap-3">
       {back}

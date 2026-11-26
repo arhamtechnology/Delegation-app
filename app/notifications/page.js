@@ -1,6 +1,7 @@
 import NotificationsView from './NotificationsView';
-import { loadNotificationsPage, withRenderTime } from '../../lib/page-data';
-import { getServerSession } from '../../lib/server-session';
+import { loadNotificationsPage } from '../../modules/notifications/inbox';
+import { withRenderTime } from '../../lib/render-freshness';
+import { getServerSession } from '../../modules/identity/server-session';
 
 export const metadata = { title: 'Inbox' };
 
